@@ -17,10 +17,26 @@
 //! conventions in both projects.
 
 use serde::{Deserialize, Serialize};
+use sovd_dfm::DfmBackendConfig;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Configuration {
     pub server: ServerConfig,
+    /// Per ADR-0016 `[backend]` section. Runtime-dispatches SovdDb /
+    /// FaultSink / OperationCycle picks. Compile-time `score` feature
+    /// gates whether the S-CORE crates are linked in at all.
+    #[serde(default)]
+    pub backend: DfmBackendConfig,
+    /// DFM-served component id. Requests to this component on
+    /// /sovd/v1/components/{id}/faults go through the DFM's SovdDb.
+    /// Anything not matching still falls through to the InMemoryServer
+    /// demo data for route-compatibility with Phase 1/2 tests.
+    #[serde(default = "default_dfm_component_id")]
+    pub dfm_component_id: String,
+}
+
+fn default_dfm_component_id() -> String {
+    "dfm".to_owned()
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -52,6 +68,8 @@ impl Default for Configuration {
                 port: 20002,
                 mode: ServerMode::default(),
             },
+            backend: DfmBackendConfig::default(),
+            dfm_component_id: default_dfm_component_id(),
         }
     }
 }

@@ -38,7 +38,7 @@ members = [
 
 [workspace.dependencies]
 sovd-interfaces = { path = "sovd-interfaces" }
-sovd-dfm = { path = "sovd-dfm" }
+sovd-dfm = { path = "sovd-dfm", default-features = false }
 sovd-db = { path = "sovd-db" }
 sovd-server = { path = "sovd-server" }
 sovd-gateway = { path = "sovd-gateway" }
