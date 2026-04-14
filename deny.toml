@@ -25,7 +25,10 @@ feature-depth = 1
 # More documentation for the advisories section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html
 [advisories]
-ignore = []
+ignore = [
+  { id = "RUSTSEC-2023-0071", reason = "Marvin side-channel impacts RSA CRT decryption; crate used only for signing/verification (RS256). No key gen/decryption paths executed." },
+  { id = "RUSTSEC-2026-0097", reason = "Impact should be low as we do not call the affected code path; Updated locked dependency to unaffected version as far as possible; remaining affected version is transitive from jsonwebtoken and we need to wait until they provide an updated version." },
+]
 
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
@@ -37,6 +40,16 @@ ignore = []
 allow = ["Apache-2.0", "BSD-3-Clause", "ISC", "MIT", "Unicode-3.0", "Zlib"]
 
 confidence-threshold = 0.8
+
+[[licenses.exceptions]]
+allow = ["CDLA-Permissive-2.0"]
+name = "webpki-roots"
+version = "1.0"
+
+[[licenses.exceptions]]
+allow = ["bzip2-1.0.6"]
+name = "libbz2-rs-sys"
+version = "0.2"
 
 [licenses.private]
 ignore = true
@@ -62,7 +75,12 @@ skip-tree = []
 unknown-registry = "warn"
 unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []
+allow-git = [
+  "https://github.com/theswiftfox/doip-codec.git",
+  "https://github.com/theswiftfox/doip-definitions.git",
+  "https://github.com/theswiftfox/doip-sockets.git",
+  "https://github.com/theswiftfox/mimalloc.git",
+]
 
 [sources.allow-org]
 github = []
