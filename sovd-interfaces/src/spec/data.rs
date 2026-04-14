@@ -22,6 +22,7 @@
 //! - `data/types.yaml#DataCategoryInformation`
 //! - `data/types.yaml#ValueGroup`
 //! - `data/types.yaml#DataListEntry`
+//! - `data/responses.yaml#Datas`
 //!
 //! These types back the SOVD `data` and `data-lists` endpoints — the SOVD
 //! equivalent of UDS `0x22 ReadDataByIdentifier` for both classic and
@@ -186,6 +187,33 @@ pub struct DataListEntry {
     pub items: Vec<ValueMetadata>,
 }
 
+/// Response body for `GET .../components/{component}/data` — the list of
+/// all data resources an entity provides.
+///
+/// Provenance: `data/responses.yaml#Datas` (inline response schema).
+///
+/// The schema is an inline object under the `Datas` response, with two
+/// fields:
+///
+/// - `items`: array of `ValueMetadata` (required)
+/// - `schema`: optional `OpenApiSchema` reference — only populated when
+///   the client passes `include-schema=true`. The spec defines
+///   `OpenApiSchema` as an arbitrary `OpenAPI` 3.1 schema subtree pulled in
+///   via `$ref` from the upstream OAI schema file, so we carry it as a
+///   free-form `serde_json::Value`. This is **not** a spec-type escape
+///   hatch — the spec itself keeps this field intentionally open.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct Datas {
+    /// All data resources the entity exposes, each described by its
+    /// `ValueMetadata`.
+    pub items: Vec<ValueMetadata>,
+
+    /// Optional embedded `OpenAPI` schema describing the response shape.
+    /// Only present when the client requests `include-schema=true`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -244,6 +272,45 @@ mod tests {
         let json = serde_json::to_string(&r).expect("serialize");
         let back: ReadValue = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(r, back);
+    }
+
+    #[test]
+    fn datas_round_trip() {
+        let d = Datas {
+            items: vec![
+                ValueMetadata {
+                    id: "DriverWindow".into(),
+                    name: "Position of driver window".into(),
+                    translation_id: None,
+                    category: "currentData".into(),
+                    groups: Some(vec!["front".into()]),
+                    tags: None,
+                },
+                ValueMetadata {
+                    id: "AppInfo".into(),
+                    name: "Window Control Version Numbers".into(),
+                    translation_id: None,
+                    category: "identData".into(),
+                    groups: None,
+                    tags: None,
+                },
+            ],
+            schema: None,
+        };
+        let json = serde_json::to_string(&d).expect("serialize");
+        let back: Datas = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(d, back);
+    }
+
+    #[test]
+    fn datas_round_trip_with_schema() {
+        let d = Datas {
+            items: vec![],
+            schema: Some(serde_json::json!({"type": "object"})),
+        };
+        let json = serde_json::to_string(&d).expect("serialize");
+        let back: Datas = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(d, back);
     }
 
     #[test]

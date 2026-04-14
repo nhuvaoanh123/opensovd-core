@@ -39,7 +39,7 @@ use sovd_interfaces::spec::{
         EntityReference,
     },
     data::{
-        DataCategoryInformation, DataListEntry, ListOfValues, ReadValue, Severity, Value,
+        DataCategoryInformation, DataListEntry, Datas, ListOfValues, ReadValue, Severity, Value,
         ValueGroup, ValueMetadata,
     },
     error::{DataError, GenericError},
@@ -252,4 +252,9 @@ fn snapshot_value_group() {
 #[test]
 fn snapshot_data_list_entry() {
     check_snapshot::<DataListEntry>("DataListEntry");
+}
+
+#[test]
+fn snapshot_datas() {
+    check_snapshot::<Datas>("Datas");
 }

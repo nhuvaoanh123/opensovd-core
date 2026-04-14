@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../components/{component}/data` — the list of\nall data resources an entity provides.\n\nProvenance: `data/responses.yaml#Datas` (inline response schema).\n\nThe schema is an inline object under the `Datas` response, with two\nfields:\n\n- `items`: array of `ValueMetadata` (required)\n- `schema`: optional `OpenApiSchema` reference — only populated when\n  the client passes `include-schema=true`. The spec defines\n  `OpenApiSchema` as an arbitrary `OpenAPI` 3.1 schema subtree pulled in\n  via `$ref` from the upstream OAI schema file, so we carry it as a\n  free-form `serde_json::Value`. This is **not** a spec-type escape\n  hatch — the spec itself keeps this field intentionally open.",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/ValueMetadata"
+      },
+      "description": "All data resources the entity exposes, each described by its\n`ValueMetadata`."
+    },
+    "schema": {
+      "description": "Optional embedded `OpenAPI` schema describing the response shape.\nOnly present when the client requests `include-schema=true`."
+    }
+  }
+}
