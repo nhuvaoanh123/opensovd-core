@@ -24,6 +24,7 @@ members = [
   "sovd-db",
   "sovd-server",
   "sovd-gateway",
+  "sovd-client",
   "sovd-tracing",
   "sovd-main",
   "integration-tests",
@@ -35,6 +36,7 @@ sovd-dfm = { path = "sovd-dfm" }
 sovd-db = { path = "sovd-db" }
 sovd-server = { path = "sovd-server" }
 sovd-gateway = { path = "sovd-gateway" }
+sovd-client = { path = "sovd-client" }
 sovd-tracing = { path = "sovd-tracing" }
 
 # ---- common crates ----

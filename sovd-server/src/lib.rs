@@ -5,9 +5,22 @@
 //!
 //! Phase 0 exposes only `GET /sovd/v1/health` to prove the axum + tokio
 //! plumbing works end-to-end. Real SOVD entity routes land in Phase 3.
+//!
+//! See [`ARCHITECTURE.md`](../../ARCHITECTURE.md) for role boundaries. This
+//! crate serves **one component** — system-wide multiplexing is
+//! `sovd-gateway`'s job.
 
 use axum::{Json, Router, routing::get};
 use serde_json::{Value, json};
+
+/// SOVD Server instance for a single ECU / component.
+///
+/// Will implement [`sovd_interfaces::traits::server::SovdServer`] in
+/// Phase 3. Fields (component metadata, DFM handle, MDD provider,
+/// routine registry) are added then.
+pub struct Server {
+    // fields added in Phase 3
+}
 
 /// Build the SOVD HTTP router.
 ///
