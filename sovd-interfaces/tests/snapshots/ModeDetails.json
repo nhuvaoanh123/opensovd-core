@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../components/{component}/modes/{mode}` —\nthe current value and metadata of one specific mode.\n\nProvenance: `modes/responses.yaml#ModeDetails` (inline response\nschema).\n\n`value` is required; `name` and `translation_id` are optional\ndisplay metadata. The spec keeps `value` as a plain string here —\ncontrast with `ControlStates` which uses the open `AnyValue`.",
+  "required": [
+    "value"
+  ],
+  "properties": {
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable name of the mode."
+    },
+    "schema": {
+      "description": "Optional embedded `OpenAPI` schema describing the response shape.\nOnly present when the client requests `include-schema=true`."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `name`."
+    },
+    "value": {
+      "type": "string",
+      "description": "Current string value of the mode (e.g. `\"DEFAULT\"`,\n`\"EXTENDED\"`, `\"PROGRAMMING\"` for a diagnostic session)."
+    }
+  }
+}

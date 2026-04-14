@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../components/{component}/modes` — the list\nof all target modes an entity supports.\n\nProvenance: `modes/responses.yaml#SupportedModes` (inline response\nschema).\n\nThe `schema` field carries an optional `OpenApiSchema` subtree (via\n`$ref` in the upstream YAML). It is only populated when the client\nrequests `include-schema=true`, and the spec defines its contents as\nan arbitrary `OpenAPI` 3.1 schema, so we carry it as free-form\n`serde_json::Value`.",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/ModeCollectionItem"
+      },
+      "description": "All modes the entity exposes, each described by its\n`ModeCollectionItem`."
+    },
+    "schema": {
+      "description": "Optional embedded `OpenAPI` schema describing the response shape.\nOnly present when the client requests `include-schema=true`."
+    }
+  }
+}

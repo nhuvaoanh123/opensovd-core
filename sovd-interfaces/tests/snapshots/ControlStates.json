@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "description": "Response body for a single control-state mode query.\n\nProvenance: `modes/responses.yaml#ControlStates` (inline response\nschema).\n\nBoth `id` and `value` are required. Unlike `ModeDetails`, `value`\nhere is the spec's open `AnyValue` (`commons/types.yaml#AnyValue`):\nan `anyOf` of string, number, integer, boolean, array, or object.\nBecause the spec intentionally leaves this polymorphic, we carry it\nas `serde_json::Value` — **not** as a spec-type escape hatch but\nbecause the spec itself defines the field as arbitrary.",
+  "required": [
+    "id",
+    "value"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable identifier of the mode."
+    },
+    "value": {
+      "description": "Current value of the mode, shape per spec `AnyValue`."
+    }
+  }
+}

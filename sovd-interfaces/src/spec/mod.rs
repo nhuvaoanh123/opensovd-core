@@ -55,4 +55,5 @@ pub mod component;
 pub mod data;
 pub mod error;
 pub mod fault;
+pub mod mode;
 pub mod operation;

@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "description": "One entry in a SOVD mode collection.\n\nProvenance: `modes/types.yaml#ModeCollectionItem`.",
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the mode (e.g. `\"session\"`)."
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable name."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to this mode. The spec defines the field via the\nshared `commons/types.yaml#SupportedTags` alias (array of strings)."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `name`."
+    }
+  }
+}

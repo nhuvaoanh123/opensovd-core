@@ -44,6 +44,7 @@ use sovd_interfaces::spec::{
     },
     error::{DataError, GenericError},
     fault::{Fault, FaultDetails, FaultFilter, ListOfFaults},
+    mode::{ControlStates, ModeCollectionItem, ModeDetails, SupportedModes},
     operation::{
         ApplyCapabilityRequest, Capability, ExecutionStatus, ExecutionStatusResponse,
         ExecutionsList, OperationDescription, OperationDetails, OperationsList, ProximityChallenge,
@@ -257,4 +258,26 @@ fn snapshot_data_list_entry() {
 #[test]
 fn snapshot_datas() {
     check_snapshot::<Datas>("Datas");
+}
+
+// ---- mode ---------------------------------------------------------------
+
+#[test]
+fn snapshot_mode_collection_item() {
+    check_snapshot::<ModeCollectionItem>("ModeCollectionItem");
+}
+
+#[test]
+fn snapshot_supported_modes() {
+    check_snapshot::<SupportedModes>("SupportedModes");
+}
+
+#[test]
+fn snapshot_mode_details() {
+    check_snapshot::<ModeDetails>("ModeDetails");
+}
+
+#[test]
+fn snapshot_control_states() {
+    check_snapshot::<ControlStates>("ControlStates");
 }
