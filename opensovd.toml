@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD
+#
+# Example configuration for opensovd-core.
+# Run with: cargo run -p sovd-main -- --config-file opensovd.toml
+
+[server]
+address = "0.0.0.0"
+port = 20002
+
+[logging.otel]
+enabled = false
