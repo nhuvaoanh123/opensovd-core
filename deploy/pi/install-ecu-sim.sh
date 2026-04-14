@@ -35,6 +35,13 @@ fi
 echo "[1/4] Syncing ecu-sim source to $PI:~/ecu-sim/"
 rsync -az --delete "$CDA_ECUSIM/" "$PI:~/ecu-sim/"
 
+# Upstream CDA is typically checked out on Windows with core.autocrlf=true,
+# so rsync carries CRLF line endings into the Pi. That breaks the docker
+# entrypoint (#!/bin/bash -ex gets read as the literal "bash -ex\r").
+# Normalize all shell scripts to LF on the Pi before docker build.
+echo "[1b/4] Normalizing line endings of shell scripts on the Pi (CRLF -> LF)"
+ssh "$PI" 'cd ~/ecu-sim && find . -type f \( -name "*.sh" -o -name gradlew \) -print0 | xargs -0 sed -i "s/\r$//"'
+
 echo "[2/4] Building docker image taktflow/cda-ecu-sim:latest on the Pi (aarch64)"
 ssh "$PI" 'cd ~/ecu-sim && docker build -f docker/Dockerfile -t taktflow/cda-ecu-sim:latest .'
 
