@@ -2688,3 +2688,18 @@ checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
 name = "aide"
 version = "0.16.0-alpha.1"
 source = "git+https://github.com/alexmohr/aide.git?rev=56355cb#56355cbeb5a036cfaa35433b60717720350b4ad2"
+
+[[patch.unused]]
+name = "doip-codec"
+version = "2.0.8"
+source = "git+https://github.com/theswiftfox/doip-codec.git?rev=0dba319#0dba319280a116bd555814bcf668d491ede2a9dd"
+
+[[patch.unused]]
+name = "doip-definitions"
+version = "3.0.13"
+source = "git+https://github.com/theswiftfox/doip-definitions.git?rev=bdeab8c#bdeab8cbacea1e131b7b134f636bd34e585b4d98"
+
+[[patch.unused]]
+name = "flatbuffers"
+version = "25.9.23"
+source = "git+https://github.com/alexmohr/flatbuffers.git?rev=0ba3307d#0ba3307d110a6def7419ad1158245cdf47c6d0c5"

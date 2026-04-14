@@ -52,6 +52,14 @@ futures = "0.3"
 regex = "1.12.2"
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 bytes = "1"
+# ---- CDA-specific wire-format crates (TDD punchlist: expected to not resolve until patches land) ----
+prost = "0.14"
+prost-build = "0.14.1"
+flatbuffers = "25.9.23"
+doip-codec = "2.0.8"
+doip-definitions = "3.0.13"
+xz2 = "0.1.7"
+# ---- end CDA-specific ----
 hex = "0.4.3"
 strum = "0.27.2"
 strum_macros = "0.27.2"
@@ -66,11 +74,21 @@ clap = { version = "4.5", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 schemars = "1.1.0"
 aide = "0.16.0-alpha.1"
+# ---- CDA-specific MDD / self-ref / mmap / build-script-config crates ----
+ouroboros = "0.18.5"
+memmap2 = "0.9"
+cargo_toml = "0.22.3"
+# ---- end CDA-specific ----
 toml = "0.9.8"
 libc = "0.2.177"
 foldhash = "0.2.0"
 mockall = "0.14.0"
 sha2 = "0.10"
+
+# ---- CDA-specific mbedtls UDS TLS crates (mirrored as local paths per CDA layout) ----
+mbedtls-sys = { path = "comm-mbedtls/mbedtls-sys" }
+mbedtls-rs = { path = "comm-mbedtls/mbedtls-rs" }
+# ---- end CDA-specific ----
 
 # ---- tracing & logging crates ----
 tracing = "0.1.41"
@@ -78,6 +96,11 @@ tracing-core = "0.1.34"
 tracing-appender = "0.2.3"
 tracing-opentelemetry = "0.32.0"
 tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter"] }
+# ---- CDA-specific DLT tracing crates (TDD punchlist: Phase 6 enables these) ----
+tracing-dlt = { version = "0.1.0" }
+dlt-rs = "0.1.0"
+dlt-sys = "0.1.0"
+# ---- end CDA-specific ----
 strip-ansi-escapes = "0.2.1"
 nu-ansi-term = "0.50"
 console-subscriber = "0.5.0"
@@ -133,6 +156,8 @@ inherits = "release"
 debug = true
 
 [patch.crates-io]
-# Necessary because upstream is still using an older version of serde_qs
-# (0.14 instead of 1.0.0-rc.3). Mirrored from CDA so aide pulls compile.
+# Necessary because upstream is still using an older version of serde_qs (0.14 instead of 1.0.0-rc.3)
 aide = { git = "https://github.com/alexmohr/aide.git", rev = "56355cb" }
+doip-codec = { git = "https://github.com/theswiftfox/doip-codec.git", rev = "0dba319" }
+doip-definitions = { git = "https://github.com/theswiftfox/doip-definitions.git", rev = "bdeab8c" }
+flatbuffers = { git = "https://github.com/alexmohr/flatbuffers.git", rev = "0ba3307d" }
