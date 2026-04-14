@@ -18,11 +18,12 @@
 //! env vars -> CLI overrides), matching the upstream classic-diagnostic-adapter
 //! conventions. Real gateway wiring lands in later phases.
 
-use std::{net::SocketAddr, path::PathBuf};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
 use clap::Parser;
+use sovd_server::InMemoryServer;
 
-use crate::config::configfile::Configuration;
+use crate::config::configfile::{Configuration, ServerMode};
 
 mod config;
 
@@ -67,7 +68,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     args.update_config(&mut config);
 
-    let app = sovd_server::app();
+    let app = match config.server.mode {
+        ServerMode::InMemory => {
+            tracing::info!("Booting InMemoryServer with demo data (cvc, fzc, rzc)");
+            let server = Arc::new(InMemoryServer::new_with_demo_data());
+            sovd_server::routes::app_with_server(server)
+        }
+        ServerMode::HelloWorld => {
+            tracing::info!("Booting hello-world router (health endpoint only)");
+            sovd_server::app()
+        }
+    };
+
     let addr: SocketAddr = format!("{}:{}", config.server.address, config.server.port).parse()?;
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
