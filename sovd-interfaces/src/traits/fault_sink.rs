@@ -27,7 +27,8 @@
 
 use async_trait::async_trait;
 
-use crate::types::{error::Result, fault::FaultRecord};
+use crate::extras::fault::FaultRecord;
+use crate::types::error::Result;
 
 /// Ingestion sink for faults coming from the Fault Library.
 ///

@@ -21,48 +21,54 @@
 //! trait takes a [`ComponentId`] on every call: one client instance can
 //! address many components behind the same base URL.
 
-use crate::types::{
-    component::{ComponentId, ComponentInfo},
-    dtc::{Dtc, DtcGroup, DtcStatusMask},
-    error::Result,
-    routine::RoutineId,
+use crate::spec::{
+    component::EntityCapabilities,
+    fault::{FaultFilter, ListOfFaults},
+    operation::{StartExecutionAsyncResponse, StartExecutionRequest},
 };
+use crate::types::{component::ComponentId, error::Result};
 
 /// Outbound SOVD REST client.
 pub trait SovdClient: Send + Sync {
-    /// `GET /sovd/v1/components/{component}/faults` with the given status
-    /// mask filter. See
-    /// [`SovdServer::list_dtcs`](crate::traits::server::SovdServer::list_dtcs)
+    /// `GET /sovd/v1/components/{component}/faults` with the given filter.
+    /// See
+    /// [`SovdServer::list_faults`](crate::traits::server::SovdServer::list_faults)
     /// for filter semantics.
-    fn list_dtcs(
+    fn list_faults(
         &self,
         component: ComponentId,
-        filter: DtcStatusMask,
-    ) -> impl std::future::Future<Output = Result<Vec<Dtc>>> + Send;
+        filter: FaultFilter,
+    ) -> impl std::future::Future<Output = Result<ListOfFaults>> + Send;
 
-    /// `POST /sovd/v1/components/{component}/faults/clear` with an optional
-    /// group filter. See
-    /// [`SovdServer::clear_dtcs`](crate::traits::server::SovdServer::clear_dtcs)
-    /// for semantics.
-    fn clear_dtcs(
+    /// `DELETE /sovd/v1/components/{component}/faults` — clear every fault.
+    /// See
+    /// [`SovdServer::clear_all_faults`](crate::traits::server::SovdServer::clear_all_faults).
+    fn clear_all_faults(
         &self,
         component: ComponentId,
-        filter: Option<DtcGroup>,
     ) -> impl std::future::Future<Output = Result<()>> + Send;
 
-    /// `POST /sovd/v1/components/{component}/operations/{id}/start` with
-    /// raw argument bytes. Returns after the ECU has accepted the routine
-    /// start; poll the server for status.
-    fn start_routine(
+    /// `DELETE /sovd/v1/components/{component}/faults/{code}` — clear one
+    /// fault.
+    fn clear_fault(
         &self,
         component: ComponentId,
-        id: RoutineId,
-        args: &[u8],
+        code: &str,
     ) -> impl std::future::Future<Output = Result<()>> + Send;
 
-    /// `GET /sovd/v1/components/{component}`.
-    fn component_info(
+    /// `POST /sovd/v1/components/{component}/operations/{operation_id}/executions`.
+    /// Returns the spec-defined async-execution response (200 sync flow is
+    /// out of scope for this MVP client).
+    fn start_execution(
         &self,
         component: ComponentId,
-    ) -> impl std::future::Future<Output = Result<ComponentInfo>> + Send;
+        operation_id: &str,
+        request: StartExecutionRequest,
+    ) -> impl std::future::Future<Output = Result<StartExecutionAsyncResponse>> + Send;
+
+    /// `GET /sovd/v1/components/{component}` — entity capabilities.
+    fn entity_capabilities(
+        &self,
+        component: ComponentId,
+    ) -> impl std::future::Future<Output = Result<EntityCapabilities>> + Send;
 }

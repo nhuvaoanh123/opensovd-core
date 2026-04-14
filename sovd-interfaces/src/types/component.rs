@@ -44,28 +44,7 @@ impl std::fmt::Display for ComponentId {
     }
 }
 
-/// Hardware revision string (free-form; vendor-defined encoding).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HwRevision(pub String);
-
-/// Software version string (free-form; typically semver or vendor-defined).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SwVersion(pub String);
-
-/// Static-ish metadata describing a component.
-///
-/// Surfaced through SOVD `GET /sovd/v1/components/{id}` and aggregated by
-/// `sovd-gateway` when answering `GET /sovd/v1/components`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ComponentInfo {
-    /// Stable identifier.
-    pub id: ComponentId,
-    /// Human-readable name.
-    pub name: String,
-    /// Hardware revision reported by the ECU, if available.
-    pub hw_revision: Option<HwRevision>,
-    /// Software version reported by the ECU, if available.
-    pub sw_version: Option<SwVersion>,
-    /// Free-form vendor string (OEM, supplier, variant).
-    pub vendor: Option<String>,
-}
+// Component metadata DTOs (former `ComponentInfo`, `HwRevision`, `SwVersion`)
+// were removed in the spec port (Deliverable 3, 2026-04-14). The wire
+// equivalent is now [`crate::spec::component::EntityCapabilities`], ported
+// directly from `discovery/responses.yaml#discoveredEntityCapabilities`.

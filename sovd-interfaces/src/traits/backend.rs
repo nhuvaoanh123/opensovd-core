@@ -30,12 +30,12 @@
 
 use async_trait::async_trait;
 
-use crate::types::{
-    component::{ComponentId, ComponentInfo},
-    dtc::{Dtc, DtcGroup, DtcStatusMask},
-    error::Result,
-    routine::RoutineId,
+use crate::spec::{
+    component::EntityCapabilities,
+    fault::{FaultFilter, ListOfFaults},
+    operation::{StartExecutionAsyncResponse, StartExecutionRequest},
 };
+use crate::types::{component::ComponentId, error::Result};
 
 /// Which kind of backend a given [`SovdBackend`] is. Used by the gateway
 /// for routing decisions, metrics, and admin endpoints.
@@ -71,15 +71,22 @@ pub trait SovdBackend: Send + Sync {
     /// Kind discriminator — see [`BackendKind`].
     fn kind(&self) -> BackendKind;
 
-    /// See [`SovdServer::list_dtcs`](crate::traits::server::SovdServer::list_dtcs).
-    async fn list_dtcs(&self, filter: DtcStatusMask) -> Result<Vec<Dtc>>;
+    /// See [`SovdServer::list_faults`](crate::traits::server::SovdServer::list_faults).
+    async fn list_faults(&self, filter: FaultFilter) -> Result<ListOfFaults>;
 
-    /// See [`SovdServer::clear_dtcs`](crate::traits::server::SovdServer::clear_dtcs).
-    async fn clear_dtcs(&self, filter: Option<DtcGroup>) -> Result<()>;
+    /// See [`SovdServer::clear_all_faults`](crate::traits::server::SovdServer::clear_all_faults).
+    async fn clear_all_faults(&self) -> Result<()>;
 
-    /// See [`SovdServer::start_routine`](crate::traits::server::SovdServer::start_routine).
-    async fn start_routine(&self, id: RoutineId, args: &[u8]) -> Result<()>;
+    /// See [`SovdServer::clear_fault`](crate::traits::server::SovdServer::clear_fault).
+    async fn clear_fault(&self, code: &str) -> Result<()>;
 
-    /// See [`SovdServer::component_info`](crate::traits::server::SovdServer::component_info).
-    async fn component_info(&self) -> Result<ComponentInfo>;
+    /// See [`SovdServer::start_execution`](crate::traits::server::SovdServer::start_execution).
+    async fn start_execution(
+        &self,
+        operation_id: &str,
+        request: StartExecutionRequest,
+    ) -> Result<StartExecutionAsyncResponse>;
+
+    /// See [`SovdServer::entity_capabilities`](crate::traits::server::SovdServer::entity_capabilities).
+    async fn entity_capabilities(&self) -> Result<EntityCapabilities>;
 }

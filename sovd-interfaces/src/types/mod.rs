@@ -10,15 +10,26 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Request/response DTOs and domain types used by every `opensovd-core` crate.
+//! Internal Rust-only types used by every `opensovd-core` crate.
 //!
-//! Each submodule owns one slice of the SOVD domain. Keep shapes minimal in
-//! Phase 0 — new fields are added in Phase 3/4 once real backends land.
+//! After the spec port (Deliverable 2/3, 2026-04-14) this module holds
+//! **only** types that are not in the ASAM SOVD `OpenAPI` surface:
+//!
+//! - [`component::ComponentId`] — typed wrapper for routing (the spec uses
+//!   bare strings, but internally we want a distinct type).
+//! - [`error::SovdError`] — the Rust error enum returned from every trait
+//!   method. Mapped to [`crate::spec::error::GenericError`] at the HTTP
+//!   layer.
+//! - [`session::SessionKind`], [`session::Session`],
+//!   [`session::SecurityLevel`] — UDS session / security-access shapes
+//!   reused by both native servers and CDA. (The spec exposes these via
+//!   `modes/`, but the Phase 0 trait surface still uses the internal Rust
+//!   representation; a future spec port will move them into
+//!   [`crate::spec::mode`] when the modes resource is on the MVP path.)
+//!
+//! Wire-format DTOs (`Fault`, `Operation*`, `EntityCapabilities`, …) live
+//! in [`crate::spec`] and are derived from the ISO 17978-3 `OpenAPI` YAML.
 
 pub mod component;
-pub mod data;
-pub mod dtc;
 pub mod error;
-pub mod fault;
-pub mod routine;
 pub mod session;

@@ -20,10 +20,17 @@
 //!
 //! # Module map
 //!
-//! - [`types`] — request/response DTOs, DTC/component/routine/session types
-//!   and the [`types::error::SovdError`] error enum.
+//! - [`spec`] — wire-format DTOs ported directly from the ASAM SOVD
+//!   v1.1.0-rc1 `OpenAPI` template (ISO 17978-3 ed.1). Every type is locked
+//!   by a snapshot test under `tests/snapshots/`. See
+//!   [`docs/openapi-audit-2026-04-14.md`](../../docs/openapi-audit-2026-04-14.md).
+//! - [`extras`] — Taktflow-specific shapes that extend the spec, per
+//!   ADR-0006. Currently holds the embedded Fault Library IPC types
+//!   ([`extras::fault::FaultRecord`]).
+//! - [`types`] — internal Rust-only types ([`types::error::SovdError`],
+//!   [`types::component::ComponentId`], session/security wrappers).
 //! - [`traits`] — the Server/Gateway/Backend/Client/FaultSink trait
-//!   definitions.
+//!   definitions; method signatures use the spec-derived DTOs from [`spec`].
 //!
 //! # Conventions
 //!
@@ -36,12 +43,13 @@
 //!   [`opensovd/docs/design/design.md`](../../../opensovd/docs/design/design.md)
 //!   are called out inline.
 
+pub mod extras;
 pub mod spec;
 pub mod traits;
 pub mod types;
 
 // Flat re-exports for the most frequently used shapes, so downstream crates
-// can write `use sovd_interfaces::{SovdError, Dtc, ComponentId};`.
+// can write `use sovd_interfaces::{SovdError, ComponentId, spec::fault::Fault};`.
 pub use traits::{
     backend::{BackendKind, SovdBackend},
     client::SovdClient,
@@ -50,11 +58,7 @@ pub use traits::{
     server::SovdServer,
 };
 pub use types::{
-    component::{ComponentId, ComponentInfo, HwRevision, SwVersion},
-    data::{DataIdentifier, DataValue},
-    dtc::{Dtc, DtcGroup, DtcId, DtcSeverity, DtcStatus, DtcStatusMask},
+    component::ComponentId,
     error::SovdError,
-    fault::{FaultId, FaultRecord, FaultSeverity},
-    routine::{RoutineId, RoutineResult, RoutineState},
     session::{SecurityLevel, Session, SessionKind},
 };

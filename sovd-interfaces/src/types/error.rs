@@ -21,7 +21,7 @@
 
 use thiserror::Error;
 
-use crate::types::{component::ComponentId, routine::RoutineId};
+use crate::types::component::ComponentId;
 
 /// Unified result alias for SOVD trait methods.
 pub type Result<T> = core::result::Result<T, SovdError>;
@@ -52,11 +52,11 @@ pub enum SovdError {
     #[error("unauthorized")]
     Unauthorized,
 
-    /// A routine was started but reported a failure.
-    #[error("routine {id} failed: {reason}")]
-    RoutineFailed {
-        /// Which routine failed.
-        id: RoutineId,
+    /// An operation execution started but terminated with a failure.
+    #[error("operation {id} failed: {reason}")]
+    OperationFailed {
+        /// SOVD operation id (string per spec).
+        id: String,
         /// Vendor-supplied failure reason.
         reason: String,
     },

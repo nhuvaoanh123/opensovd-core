@@ -20,14 +20,21 @@
 //!
 //! A `SovdServer` serves **one component**. System-wide multiplexing across
 //! components is [`SovdGateway`](crate::traits::gateway::SovdGateway)'s job.
+//!
+//! Trait method signatures use the spec-derived DTOs from [`crate::spec`]
+//! (ported from the ASAM SOVD v1.1.0-rc1 `OpenAPI` template). The internal
+//! [`SovdError`](crate::types::error::SovdError) enum is the carve-out: it
+//! is the Rust error type returned from every method, mapped onto the
+//! wire-format [`spec::error::GenericError`](crate::spec::error::GenericError)
+//! at the HTTP layer.
 
-use crate::types::{
-    component::ComponentInfo,
-    data::{DataIdentifier, DataValue},
-    dtc::{Dtc, DtcGroup, DtcId, DtcStatusMask},
-    error::Result,
-    routine::{RoutineId, RoutineState},
+use crate::spec::{
+    component::EntityCapabilities,
+    data::ReadValue,
+    fault::{FaultDetails, FaultFilter, ListOfFaults},
+    operation::{ExecutionStatusResponse, StartExecutionAsyncResponse, StartExecutionRequest},
 };
+use crate::types::error::Result;
 
 /// SOVD server for a single ECU/component.
 ///
@@ -35,74 +42,73 @@ use crate::types::{
 /// crosses an IPC or network boundary (DFM over shared memory, CDA over
 /// `DoIP`, native MDD provider over tokio channel).
 pub trait SovdServer: Send + Sync {
-    /// List DTCs currently held for this component.
+    /// List faults currently held for this component (`GET .../faults`).
     ///
-    /// `filter` is applied bit-by-bit against each DTC's status byte: only
-    /// DTCs with **all** the bits set in the mask are returned. A mask of
-    /// `0x00` ([`DtcStatusMask::all`](crate::types::dtc::DtcStatusMask::all))
-    /// disables filtering and returns every DTC.
-    fn list_dtcs(
+    /// `filter` is the spec-defined combination of `status[key]` matches,
+    /// `severity` upper bound, and `scope`. The empty filter
+    /// ([`FaultFilter::all`]) returns every fault.
+    fn list_faults(
         &self,
-        filter: DtcStatusMask,
-    ) -> impl std::future::Future<Output = Result<Vec<Dtc>>> + Send;
+        filter: FaultFilter,
+    ) -> impl std::future::Future<Output = Result<ListOfFaults>> + Send;
 
-    /// Fetch one DTC by id.
+    /// Fetch the details of one fault by code (`GET .../faults/{fault-code}`).
     ///
-    /// Returns [`SovdError::NotFound`](crate::SovdError::NotFound) if the
-    /// DTC is not currently held. Cleared DTCs are **not** returned — use
-    /// history queries (Phase 4) for that.
-    fn get_dtc(&self, id: DtcId) -> impl std::future::Future<Output = Result<Dtc>> + Send;
-
-    /// Clear DTCs.
-    ///
-    /// - `filter = None` clears every DTC held for this component (UDS
-    ///   equivalent: `ClearDiagnosticInformation` with group `0xFFFFFF`).
-    /// - `filter = Some(DtcGroup::All)` is semantically identical but makes
-    ///   the intent explicit at call sites.
-    /// - `filter = Some(DtcGroup::Group(code))` clears only DTCs belonging
-    ///   to the given group code.
-    ///
-    /// Clearing is idempotent: clearing an already-empty set is not an
-    /// error.
-    fn clear_dtcs(
+    /// `code` is the native fault code as a string (e.g. `"0012E3"`,
+    /// `"P102"`, `"modelMissing"`) — the spec uses string codes, not
+    /// integers. Returns
+    /// [`SovdError::NotFound`](crate::types::error::SovdError::NotFound) if
+    /// the code is not currently held.
+    fn get_fault(
         &self,
-        filter: Option<DtcGroup>,
-    ) -> impl std::future::Future<Output = Result<()>> + Send;
+        code: &str,
+    ) -> impl std::future::Future<Output = Result<FaultDetails>> + Send;
 
-    /// Start a routine (SOVD `operations`, UDS service `0x31`).
+    /// Clear all faults for this component (`DELETE .../faults`).
     ///
-    /// `args` carries raw routine input bytes — decoding per ODX/MDD is the
-    /// implementer's responsibility. On success the routine has been
-    /// **accepted**, not necessarily completed; poll
-    /// [`routine_status`](Self::routine_status) to observe progress.
-    fn start_routine(
-        &self,
-        id: RoutineId,
-        args: &[u8],
-    ) -> impl std::future::Future<Output = Result<()>> + Send;
+    /// The spec only exposes "delete every fault" and "delete one specific
+    /// fault by code" — there is no group-based clear. Clearing is
+    /// idempotent: clearing an already-empty set is not an error.
+    fn clear_all_faults(&self) -> impl std::future::Future<Output = Result<()>> + Send;
 
-    /// Query the current state of a routine previously started via
-    /// [`start_routine`](Self::start_routine).
+    /// Clear one fault by code (`DELETE .../faults/{fault-code}`).
+    fn clear_fault(&self, code: &str) -> impl std::future::Future<Output = Result<()>> + Send;
+
+    /// Start an operation (SOVD `POST .../operations/{op}/executions`).
     ///
-    /// Returns [`RoutineState::Idle`](crate::types::routine::RoutineState::Idle)
-    /// if the routine has never been started on this backend.
-    fn routine_status(
+    /// `operation_id` is the SOVD operation id (string, e.g.
+    /// `"SteeringAngleControl"`). `request` carries the optional
+    /// `timeout`, free-form `parameters`, and `proximity_response`. The
+    /// returned [`StartExecutionAsyncResponse`] carries the execution id
+    /// the caller polls via [`execution_status`](Self::execution_status).
+    fn start_execution(
         &self,
-        id: RoutineId,
-    ) -> impl std::future::Future<Output = Result<RoutineState>> + Send;
+        operation_id: &str,
+        request: StartExecutionRequest,
+    ) -> impl std::future::Future<Output = Result<StartExecutionAsyncResponse>> + Send;
 
-    /// Read one Data Identifier.
+    /// Query the current status of a previously started execution
+    /// (`GET .../operations/{op}/executions/{execution-id}`).
+    fn execution_status(
+        &self,
+        operation_id: &str,
+        execution_id: &str,
+    ) -> impl std::future::Future<Output = Result<ExecutionStatusResponse>> + Send;
+
+    /// Read one data resource (`GET .../data/{data-id}`).
     ///
     /// On CDA-backed ECUs this translates to UDS `0x22
     /// ReadDataByIdentifier`. On native servers it reads from the local
-    /// MDD-backed provider. The returned [`DataValue`] is already decoded;
-    /// schema introspection (`?include-schema=true`) is handled at the HTTP
-    /// layer, not here.
-    fn read_did(
+    /// MDD-backed provider. The returned [`ReadValue`] carries the already
+    /// decoded value; embedded schema (`?include-schema=true`) is handled
+    /// at the HTTP layer.
+    fn read_data(
         &self,
-        did: DataIdentifier,
-    ) -> impl std::future::Future<Output = Result<DataValue>> + Send;
+        data_id: &str,
+    ) -> impl std::future::Future<Output = Result<ReadValue>> + Send;
 
-    /// Return static-ish component metadata (`GET /components/{id}`).
-    fn component_info(&self) -> impl std::future::Future<Output = Result<ComponentInfo>> + Send;
+    /// Return entity capabilities (`GET /{collection}/{entity-id}`).
+    fn entity_capabilities(
+        &self,
+    ) -> impl std::future::Future<Output = Result<EntityCapabilities>> + Send;
 }

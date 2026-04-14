@@ -19,11 +19,8 @@
 //! See upstream
 //! [`design.md`](../../../../opensovd/docs/design/design.md) §"SOVD Gateway".
 
-use crate::types::{
-    component::ComponentId,
-    dtc::{Dtc, DtcStatusMask},
-    error::Result,
-};
+use crate::spec::fault::{Fault, FaultFilter};
+use crate::types::{component::ComponentId, error::Result};
 
 use super::backend::SovdBackend;
 
@@ -48,18 +45,18 @@ pub trait SovdGateway: Send + Sync {
     /// implementation-defined but stable within a single gateway instance.
     fn backends(&self) -> Box<dyn Iterator<Item = &(dyn SovdBackend + Send + Sync)> + '_>;
 
-    /// Fan-out `list_dtcs` across every backend and tag each DTC with its
-    /// originating [`ComponentId`].
+    /// Fan-out `list_faults` across every backend and tag each fault with
+    /// its originating [`ComponentId`].
     ///
     /// Implementations should call backends concurrently (e.g. via
     /// `futures::future::join_all`). A single backend failure does **not**
     /// fail the whole call — backends that error out are omitted and
     /// logged. Only a total failure (all backends errored) returns an
     /// error.
-    fn list_all_dtcs(
+    fn list_all_faults(
         &self,
-        filter: DtcStatusMask,
-    ) -> impl std::future::Future<Output = Result<Vec<(ComponentId, Dtc)>>> + Send;
+        filter: FaultFilter,
+    ) -> impl std::future::Future<Output = Result<Vec<(ComponentId, Fault)>>> + Send;
 
     /// Look up the backend for a specific component.
     ///
