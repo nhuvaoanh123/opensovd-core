@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88.0"
+license = "Apache-2.0"
+homepage = "https://github.com/eclipse-opensovd/opensovd-core"
+repository = "https://github.com/eclipse-opensovd/opensovd-core"
+
+[workspace]
+resolver = "3"
+members = [
+  "sovd-interfaces",
+  "sovd-dfm",
+  "sovd-db",
+  "sovd-server",
+  "sovd-gateway",
+  "sovd-tracing",
+  "sovd-main",
+  "integration-tests",
+]
+
+[workspace.dependencies]
+sovd-interfaces = { path = "sovd-interfaces" }
+sovd-dfm = { path = "sovd-dfm" }
+sovd-db = { path = "sovd-db" }
+sovd-server = { path = "sovd-server" }
+sovd-gateway = { path = "sovd-gateway" }
+sovd-tracing = { path = "sovd-tracing" }
+
+# ---- common crates ----
+async-trait = "0.1.89"
+thiserror = "2.0.17"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.48.0", default-features = false }
+futures = "0.3"
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+
+# ---- tracing & logging crates ----
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter"] }
+
+# ---- networking crates ----
+tower = { version = "0.5", default-features = false }
+tower-http = "0.6"
+
+# ---- web/api crates ----
+axum = { version = "0.8", default-features = false }
+axum-extra = { version = "0.12.2" }
+
+# ---- config & cli ----
+clap = { version = "4.5", features = ["derive"] }
+figment = { version = "0.10.19", features = ["env", "toml"] }
+
+# ---- persistence ----
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate"] }
+
+[workspace.lints.clippy]
+# enable pedantic
+pedantic = { level = "warn", priority = -1 }
+## exclude some too pedantic lints for now
+similar_names = "allow"
+
+# additional lints
+clone_on_ref_ptr = "warn"
+indexing_slicing = "deny"
+unwrap_used = "deny"
+arithmetic_side_effects = "deny"
+separated_literal_suffix = "deny"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }
+
+[profile.release.package."*"]
+opt-level = 3
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
