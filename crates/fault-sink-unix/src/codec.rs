@@ -18,7 +18,7 @@
 //! `serde_json::Value` trees (they use `deserialize_any`), so the codec
 //! round-trips meta through a string at the wire boundary. This keeps
 //! the public [`FaultRecord`] type free of any wire-format
-//! contamination, which is important for the LoLa zero-copy path.
+//! contamination, which is important for the `LoLa` zero-copy path.
 
 use serde::{Deserialize, Serialize};
 use sovd_interfaces::{
@@ -45,7 +45,7 @@ struct WireFaultRecord {
 impl WireFaultRecord {
     fn from_record(r: &FaultRecord) -> Result<Self> {
         let severity = match r.severity {
-            FaultSeverity::Fatal => 1_u8,
+            FaultSeverity::Fatal => 1u8,
             FaultSeverity::Error => 2,
             FaultSeverity::Warning => 3,
             FaultSeverity::Info => 4,
@@ -114,7 +114,7 @@ pub fn encode_frame(record: &FaultRecord) -> Result<Vec<u8>> {
     let len_u32 = u32::try_from(payload.len()).map_err(|_| {
         SovdError::Internal("encoded fault record length does not fit u32".to_owned())
     })?;
-    let mut out = Vec::with_capacity(4 + payload.len());
+    let mut out = Vec::with_capacity(payload.len().saturating_add(4));
     out.extend_from_slice(&len_u32.to_le_bytes());
     out.extend_from_slice(&payload);
     Ok(out)
@@ -126,7 +126,10 @@ pub fn encode_frame(record: &FaultRecord) -> Result<Vec<u8>> {
 ///
 /// Returns [`SovdError::Transport`] for I/O errors,
 /// [`SovdError::Internal`] for encoding errors.
-pub async fn write_frame<W: AsyncWriteExt + Unpin>(writer: &mut W, record: &FaultRecord) -> Result<()> {
+pub async fn write_frame<W: AsyncWriteExt + Unpin>(
+    writer: &mut W,
+    record: &FaultRecord,
+) -> Result<()> {
     let frame = encode_frame(record)?;
     writer
         .write_all(&frame)
@@ -149,7 +152,7 @@ pub async fn write_frame<W: AsyncWriteExt + Unpin>(writer: &mut W, record: &Faul
 /// [`SovdError::InvalidRequest`] for oversized frames, and
 /// [`SovdError::Internal`] for decode errors.
 pub async fn read_frame<R: AsyncReadExt + Unpin>(reader: &mut R) -> Result<Option<FaultRecord>> {
-    let mut len_buf = [0_u8; 4];
+    let mut len_buf = [0u8; 4];
     match reader.read_exact(&mut len_buf).await {
         Ok(_) => {}
         Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(None),
@@ -161,7 +164,7 @@ pub async fn read_frame<R: AsyncReadExt + Unpin>(reader: &mut R) -> Result<Optio
             "frame length {len} exceeds MAX_FRAME_LEN={MAX_FRAME_LEN}"
         )));
     }
-    let mut payload = vec![0_u8; len];
+    let mut payload = vec![0u8; len];
     reader
         .read_exact(&mut payload)
         .await

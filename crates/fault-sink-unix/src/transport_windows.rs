@@ -50,6 +50,10 @@ impl NamedPipeFaultSink {
     /// # Errors
     ///
     /// Returns [`SovdError::Transport`] if the connect fails.
+    //
+    // `async` for parity with the Unix `connect` signature — callers
+    // are written cross-platform and `.await` either implementation.
+    #[allow(clippy::unused_async)]
     pub async fn connect(path: &OsStr) -> Result<Self> {
         let client = ClientOptions::new()
             .open(path)

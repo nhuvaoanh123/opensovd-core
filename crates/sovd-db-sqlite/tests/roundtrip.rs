@@ -70,17 +70,18 @@ async fn clear_fault_by_code_targeted() {
     db.clear_fault_by_code("000001").await.expect("clear one");
     let list = db.list_faults(FaultFilter::all()).await.expect("list");
     assert_eq!(list.items.len(), 1);
-    assert_eq!(list.items[0].code, "000002");
+    let first = list.items.first().expect("first item");
+    assert_eq!(first.code, "000002");
 }
 
 #[tokio::test]
 async fn clear_fault_by_code_not_found() {
     let db = SqliteSovdDb::connect_in_memory().await.expect("connect");
-    let err = db.clear_fault_by_code("000099").await.expect_err("should fail");
-    assert!(matches!(
-        err,
-        sovd_interfaces::SovdError::NotFound { .. }
-    ));
+    let err = db
+        .clear_fault_by_code("000099")
+        .await
+        .expect_err("should fail");
+    assert!(matches!(err, sovd_interfaces::SovdError::NotFound { .. }));
 }
 
 #[tokio::test]
@@ -118,10 +119,10 @@ async fn snapshot_tags_active_cycle() {
 async fn concurrent_writer_smoke() {
     let db = SqliteSovdDb::connect_in_memory().await.expect("connect");
     let mut handles = Vec::new();
-    for i in 0..16_i32 {
+    for i in 0i32..16 {
         let db = db.clone();
         handles.push(tokio::spawn(async move {
-            let code: u32 = u32::try_from(i).expect("positive") + 100;
+            let code: u32 = u32::try_from(i).expect("positive").saturating_add(100);
             db.ingest_fault(sample_record(code, FaultSeverity::Warning))
                 .await
                 .expect("ingest");

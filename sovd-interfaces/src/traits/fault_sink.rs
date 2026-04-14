@@ -24,9 +24,9 @@
 //! Per ADR-0016, this trait has two anticipated backends:
 //!
 //! - `fault-sink-unix` — default standalone backend over a
-//!   `tokio::net::UnixListener` (works on Windows 10 1803+ via AF_UNIX).
+//!   `tokio::net::UnixListener` (works on Windows 10 1803+ via `AF_UNIX`).
 //! - `fault-sink-lola` — optional S-CORE backend wrapping
-//!   `score-communication`, using LoLa zero-copy shared-memory
+//!   `score-communication`, using `LoLa` zero-copy shared-memory
 //!   skeleton/proxy to move records without a copy.
 //!
 //! # Buffer-lifetime contract (widened Phase 3)
@@ -38,7 +38,7 @@
 //!   which decodes the wire bytes into an owned struct before calling the
 //!   sink.
 //! - `Borrowed(&'buf FaultRecord)` — a reference tied to a caller-owned
-//!   lifetime, used by `fault-sink-lola` to point directly at a LoLa
+//!   lifetime, used by `fault-sink-lola` to point directly at a `LoLa`
 //!   shared-memory slot without allocating.
 //!
 //! Implementations that need ownership simply `.to_owned()` inside the
@@ -65,7 +65,7 @@ pub enum FaultRecordRef<'buf> {
     /// Owned record. Used by the Unix-socket backend which decodes wire
     /// bytes into a [`FaultRecord`] before handing it to the sink.
     Owned(FaultRecord),
-    /// Borrowed record. Used by the LoLa zero-copy backend which can
+    /// Borrowed record. Used by the `LoLa` zero-copy backend which can
     /// point directly at a shared-memory slot without allocating.
     Borrowed(&'buf FaultRecord),
 }
@@ -83,8 +83,11 @@ impl FaultRecordRef<'_> {
 
     /// Borrow as a [`FaultRecord`] regardless of the underlying variant.
     /// Used by read-only paths that don't need ownership.
+    ///
+    /// Named `record` rather than `as_ref` so it does not collide with
+    /// `std::convert::AsRef::as_ref`.
     #[must_use]
-    pub fn as_ref(&self) -> &FaultRecord {
+    pub fn record(&self) -> &FaultRecord {
         match self {
             Self::Owned(r) => r,
             Self::Borrowed(r) => r,

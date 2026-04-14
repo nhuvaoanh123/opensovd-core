@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Unix-socket [`FaultSink`] backend.
 //!
 //! Default standalone Fault Library IPC path per ADR-0002 and ADR-0016.
@@ -48,4 +50,6 @@ mod transport_windows;
 #[cfg(unix)]
 pub use transport_unix::{UnixFaultSink, UnixFaultSource};
 #[cfg(windows)]
-pub use transport_windows::{NamedPipeFaultSink as UnixFaultSink, NamedPipeFaultSource as UnixFaultSource};
+pub use transport_windows::{
+    NamedPipeFaultSink as UnixFaultSink, NamedPipeFaultSource as UnixFaultSource,
+};

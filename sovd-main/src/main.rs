@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Eclipse `OpenSOVD` core - main binary entry point.
 //!
 //! Phase 3 boots the in-memory MVP server and, when configured,
@@ -94,7 +96,9 @@ async fn build_dfm(config: &Configuration) -> Result<Dfm, Box<dyn std::error::Er
                 path = %config.backend.sqlite_path,
                 "Opening SQLite DFM store"
             );
-            Arc::new(SqliteSovdDb::connect(std::path::Path::new(&config.backend.sqlite_path)).await?)
+            Arc::new(
+                SqliteSovdDb::connect(std::path::Path::new(&config.backend.sqlite_path)).await?,
+            )
         }
         #[cfg(feature = "score")]
         PersistenceBackend::Score => {
@@ -103,7 +107,9 @@ async fn build_dfm(config: &Configuration) -> Result<Dfm, Box<dyn std::error::Er
         }
         #[cfg(not(feature = "score"))]
         PersistenceBackend::Score => {
-            return Err("backend.persistence = \"score\" requires the `score` Cargo feature".into());
+            return Err(
+                "backend.persistence = \"score\" requires the `score` Cargo feature".into(),
+            );
         }
     };
 
@@ -117,7 +123,8 @@ async fn build_dfm(config: &Configuration) -> Result<Dfm, Box<dyn std::error::Er
         #[cfg(not(feature = "score"))]
         OperationCycleBackend::ScoreLifecycle => {
             return Err(
-                "backend.operation_cycle = \"score-lifecycle\" requires the `score` Cargo feature".into(),
+                "backend.operation_cycle = \"score-lifecycle\" requires the `score` Cargo feature"
+                    .into(),
             );
         }
     };

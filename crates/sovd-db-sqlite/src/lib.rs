@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! SQLite backend for the [`SovdDb`] trait.
 //!
 //! This is the default standalone persistence backend for the Taktflow
@@ -131,9 +133,7 @@ fn code_from_fault_id(id: sovd_interfaces::extras::fault::FaultId) -> String {
     format!("{:06X}", id.0)
 }
 
-fn aggregate_rows_into_faults(
-    rows: Vec<(String, i64, String, Option<String>)>,
-) -> Vec<Fault> {
+fn aggregate_rows_into_faults(rows: Vec<(String, i64, String, Option<String>)>) -> Vec<Fault> {
     // Aggregate by (component, code): one Fault per unique pair, status
     // carries last-seen metadata so GET /faults is idempotent under the
     // current event stream.
@@ -249,7 +249,10 @@ impl SovdDb for SqliteSovdDb {
             ));
         }
         let all = aggregate_rows_into_faults(raw);
-        let items = all.into_iter().filter(|f| matches_filter(f, &filter)).collect();
+        let items = all
+            .into_iter()
+            .filter(|f| matches_filter(f, &filter))
+            .collect();
         Ok(ListOfFaults {
             items,
             schema: None,
@@ -284,9 +287,12 @@ impl SovdDb for SqliteSovdDb {
             ));
         }
         let aggregated = aggregate_rows_into_faults(raw);
-        let item = aggregated.into_iter().next().ok_or_else(|| SovdError::NotFound {
-            entity: format!("fault \"{code}\""),
-        })?;
+        let item = aggregated
+            .into_iter()
+            .next()
+            .ok_or_else(|| SovdError::NotFound {
+                entity: format!("fault \"{code}\""),
+            })?;
         Ok(FaultDetails {
             item,
             environment_data: None,
@@ -333,20 +339,16 @@ impl SovdDb for SqliteSovdDb {
     }
 
     async fn snapshot_for_operation_cycle(&self, cycle_id: &OperationCycleId) -> Result<()> {
-        sqlx::query(
-            "INSERT OR REPLACE INTO operation_cycles (cycle_id) VALUES (?1)",
-        )
-        .bind(cycle_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SovdError::Internal(format!("sqlite snapshot failed: {e}")))?;
-        sqlx::query(
-            "UPDATE faults SET snapshotted = 1 WHERE operation_cycle = ?1",
-        )
-        .bind(cycle_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SovdError::Internal(format!("sqlite snapshot failed: {e}")))?;
+        sqlx::query("INSERT OR REPLACE INTO operation_cycles (cycle_id) VALUES (?1)")
+            .bind(cycle_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SovdError::Internal(format!("sqlite snapshot failed: {e}")))?;
+        sqlx::query("UPDATE faults SET snapshotted = 1 WHERE operation_cycle = ?1")
+            .bind(cycle_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SovdError::Internal(format!("sqlite snapshot failed: {e}")))?;
         Ok(())
     }
 }

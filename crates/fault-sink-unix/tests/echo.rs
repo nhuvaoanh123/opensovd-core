@@ -53,10 +53,7 @@ async fn echo_single_record() {
     let server = tokio::spawn(async move {
         source
             .accept_and_drain(move |r| {
-                received_clone
-                    .lock()
-                    .expect("lock")
-                    .push(r);
+                received_clone.lock().expect("lock").push(r);
                 Ok(())
             })
             .await
@@ -74,7 +71,8 @@ async fn echo_single_record() {
     server.await.expect("join");
     let records = received.lock().expect("lock");
     assert_eq!(records.len(), 1);
-    assert_eq!(records[0].id, FaultId(0x12));
+    let first = records.first().expect("first record");
+    assert_eq!(first.id, FaultId(0x12));
 }
 
 #[cfg(windows)]
@@ -92,10 +90,7 @@ async fn echo_single_record_named_pipe() {
     let server = tokio::spawn(async move {
         source
             .accept_and_drain(move |r| {
-                received_clone
-                    .lock()
-                    .expect("lock")
-                    .push(r);
+                received_clone.lock().expect("lock").push(r);
                 Ok(())
             })
             .await
@@ -112,5 +107,6 @@ async fn echo_single_record_named_pipe() {
     server.await.expect("join");
     let records = received.lock().expect("lock");
     assert_eq!(records.len(), 1);
-    assert_eq!(records[0].id, FaultId(0x34));
+    let first = records.first().expect("first record");
+    assert_eq!(first.id, FaultId(0x34));
 }

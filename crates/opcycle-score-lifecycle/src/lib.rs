@@ -27,9 +27,7 @@
 use async_trait::async_trait;
 use sovd_interfaces::{
     SovdError,
-    traits::operation_cycle::{
-        CurrentCycle, CycleName, OperationCycle, OperationCycleEvent,
-    },
+    traits::operation_cycle::{CurrentCycle, CycleName, OperationCycle, OperationCycleEvent},
     types::error::Result,
 };
 use tokio::sync::watch;

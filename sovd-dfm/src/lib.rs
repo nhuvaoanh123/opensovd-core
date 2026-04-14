@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Diagnostic Fault Manager (DFM) for the Eclipse `OpenSOVD` core stack.
 //!
 //! Phase 3 wires the DFM through the pluggable trait seams defined in
@@ -234,9 +236,7 @@ mod tests {
     use super::*;
     use opcycle_taktflow::TaktflowOperationCycle;
     use sovd_db_sqlite::SqliteSovdDb;
-    use sovd_interfaces::{
-        extras::fault::{FaultId, FaultRecord, FaultSeverity},
-    };
+    use sovd_interfaces::extras::fault::{FaultId, FaultRecord, FaultSeverity};
 
     async fn build_dfm() -> Dfm {
         let db: Arc<dyn SovdDb> = Arc::new(
@@ -265,15 +265,11 @@ mod tests {
     #[tokio::test]
     async fn ingest_then_list_via_backend() {
         let dfm = build_dfm().await;
-        dfm.record_fault(sample(0x11).into())
-            .await
-            .expect("ingest");
-        let list = dfm
-            .list_faults(FaultFilter::all())
-            .await
-            .expect("list");
+        dfm.record_fault(sample(0x11).into()).await.expect("ingest");
+        let list = dfm.list_faults(FaultFilter::all()).await.expect("list");
         assert_eq!(list.items.len(), 1);
-        assert_eq!(list.items[0].code, "000011");
+        let first = list.items.first().expect("first item");
+        assert_eq!(first.code, "000011");
     }
 
     #[tokio::test]
@@ -281,10 +277,7 @@ mod tests {
         let dfm = build_dfm().await;
         dfm.record_fault(sample(0x22).into()).await.expect("ingest");
         dfm.clear_all_faults().await.expect("clear");
-        let list = dfm
-            .list_faults(FaultFilter::all())
-            .await
-            .expect("list");
+        let list = dfm.list_faults(FaultFilter::all()).await.expect("list");
         assert!(list.items.is_empty());
     }
 

@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Phase 3 Line A end-to-end integration test.
 //!
 //! Boots the full axum router with an InMemoryServer + a DFM forward
@@ -121,7 +123,7 @@ mod fixture {
             component: ComponentId::new("dfm"),
             id: FaultId(offset),
             severity,
-            timestamp_ms: u64::from(offset) + 1_000,
+            timestamp_ms: u64::from(offset).saturating_add(1_000),
             meta: Some(serde_json::json!({"occurrence": offset})),
         }
     }
@@ -180,7 +182,7 @@ async fn phase3_dfm_sqlite_roundtrip() {
     assert_eq!(list.items.len(), 3, "expected three aggregated faults");
 
     // 4. DELETE one fault by code.
-    let first_code = list.items[0].code.clone();
+    let first_code = list.items.first().expect("first item").code.clone();
     let response = client
         .delete(booted.url(&format!(
             "/sovd/v1/components/{DFM_COMPONENT_ID}/faults/{first_code}"
@@ -253,7 +255,11 @@ async fn phase3_dfm_sqlite_roundtrip_bench() {
     let client = reqwest::Client::new();
 
     for record in fixture::batch() {
-        booted.dfm.record_fault(record.into()).await.expect("record");
+        booted
+            .dfm
+            .record_fault(record.into())
+            .await
+            .expect("record");
     }
     let response = client
         .get(booted.url(&format!("/sovd/v1/components/{DFM_COMPONENT_ID}/faults")))

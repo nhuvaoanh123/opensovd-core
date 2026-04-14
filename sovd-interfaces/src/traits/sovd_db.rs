@@ -16,7 +16,7 @@
 //! persistence. The concrete backend is picked at runtime by `sovd-main`
 //! from the `[backend]` TOML section. Two backends are anticipated:
 //!
-//! - `sovd-db-sqlite` — default standalone backend (SQLite + sqlx + WAL).
+//! - `sovd-db-sqlite` — default standalone backend (`SQLite` + sqlx + WAL).
 //!   See ADR-0003 for the rationale.
 //! - `sovd-db-score` — optional S-CORE backend wrapping `score-persistency`.
 //!   See ADR-0016 for the pluggability contract.
@@ -47,7 +47,7 @@ use crate::types::error::Result;
 /// Opaque identifier for an operation cycle snapshot taken by the DFM.
 ///
 /// Extras-level: the SOVD spec has no notion of "cycle snapshot" at the
-/// HTTP wire boundary, but both the SQLite and the S-CORE backends need a
+/// HTTP wire boundary, but both the `SQLite` and the S-CORE backends need a
 /// stable handle to refer to a frozen view of the fault table at cycle-end.
 /// Free-form string per ADR-0012's cycle-name namespace.
 pub type OperationCycleId = String;
@@ -57,7 +57,7 @@ pub type OperationCycleId = String;
 /// Implementations MUST be `Send + Sync` and cheap to share behind an
 /// `Arc`. Expensive work (I/O) happens inside each async method.
 ///
-/// See ADR-0003 (SQLite default), ADR-0015 (type layering), and ADR-0016
+/// See ADR-0003 (`SQLite` default), ADR-0015 (type layering), and ADR-0016
 /// (pluggability contract).
 #[async_trait]
 pub trait SovdDb: Send + Sync {

@@ -29,9 +29,7 @@
 use async_trait::async_trait;
 use sovd_interfaces::{
     SovdError,
-    traits::operation_cycle::{
-        CurrentCycle, CycleName, OperationCycle, OperationCycleEvent,
-    },
+    traits::operation_cycle::{CurrentCycle, CycleName, OperationCycle, OperationCycleEvent},
     types::error::Result,
 };
 use tokio::sync::{Mutex, watch};
@@ -211,9 +209,15 @@ mod tests {
         // and "ecu" callers by naming their cycles, and show that
         // both route through a single OperationCycle instance.
         let oc = TaktflowOperationCycle::new();
-        oc.start_cycle("tester.bench1".into()).await.expect("tester start");
-        oc.end_cycle("tester.bench1".into()).await.expect("tester end");
-        oc.start_cycle("ecu.ignition".into()).await.expect("ecu start");
+        oc.start_cycle("tester.bench1".into())
+            .await
+            .expect("tester start");
+        oc.end_cycle("tester.bench1".into())
+            .await
+            .expect("tester end");
+        oc.start_cycle("ecu.ignition".into())
+            .await
+            .expect("ecu start");
         let current = oc.current_cycle().await.expect("current");
         assert_eq!(current.name.as_deref(), Some("ecu.ignition"));
     }

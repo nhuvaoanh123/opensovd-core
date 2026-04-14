@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! S-CORE `score-communication` (LoLa) stub backend for the
 //! [`FaultSink`] trait.
 //!
