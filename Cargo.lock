@@ -1075,11 +1075,15 @@ name = "integration-tests"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "opcycle-taktflow",
  "reqwest",
  "serde",
  "serde_json",
+ "sovd-db-sqlite",
+ "sovd-dfm",
  "sovd-interfaces",
  "sovd-server",
+ "tempfile",
  "tokio",
  "url",
 ]
