@@ -25,3 +25,11 @@ workspace = true
 path = "src/lib.rs"
 
 [dependencies]
+
+[dev-dependencies]
+sovd-server = { workspace = true }
+sovd-interfaces = { workspace = true }
+axum = { workspace = true, features = ["http1", "tokio"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
+reqwest = { workspace = true, features = ["json"] }
+serde_json = { workspace = true }
