@@ -19,9 +19,11 @@
 # docs/adr/0005-virtual-ecus-speak-doip-directly.md.
 
 [database]
-# CDA's MDD database path. Points at upstream ecu-sim's ODX fixtures which
-# already match the simulator's internal UDS service catalog.
-path = "H:\\eclipse-opensovd\\classic-diagnostic-adapter\\testcontainer\\odx\\base"
+# CDA's MDD database path. Points at upstream ecu-sim's compiled MDD fixtures
+# (FLXC1000.mdd, FLXCNG1000.mdd), which match the simulator's internal UDS
+# service catalog for the FLXC1000 / FSNR2000 entities the ecu-sim exposes
+# over DoIP on the Pi.
+path = "H:\\eclipse-opensovd\\classic-diagnostic-adapter\\testcontainer\\odx"
 
 [doip]
 # Local tester endpoint. CDA listens for DoIP peers here; for the SIL path

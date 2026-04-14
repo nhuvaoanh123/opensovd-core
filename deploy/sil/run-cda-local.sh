@@ -58,4 +58,8 @@ fi
 echo "[launch] starting CDA"
 echo "  binary: $CDA_BIN"
 echo "  config: $CDA_CONFIG"
-exec "$CDA_BIN" --config-file "$CDA_CONFIG"
+# CDA loads its TOML config via the CDA_CONFIG_FILE env variable
+# (see cda-main/src/config/mod.rs::load_config). CLI flags would override
+# individual fields but there is no --config-file switch upstream.
+export CDA_CONFIG_FILE="$CDA_CONFIG"
+exec "$CDA_BIN"
