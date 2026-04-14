@@ -51,7 +51,7 @@ use sovd_interfaces::{
             OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
         },
     },
-    traits::server::SovdServer,
+    traits::{backend::SovdBackend, server::SovdServer},
     types::error::Result,
 };
 use tokio::sync::RwLock;
@@ -102,14 +102,36 @@ impl ComponentState {
     }
 }
 
-/// Multi-component in-memory SOVD demo store.
+/// Multi-component in-memory SOVD demo store with optional forward backends.
 ///
 /// Construct with [`InMemoryServer::new_with_demo_data`] to get the three
 /// pre-populated Taktflow components (`cvc`, `fzc`, `rzc`). Obtain a
 /// per-component trait view with [`InMemoryServer::component_server`].
-#[derive(Debug, Clone)]
+///
+/// # Hybrid dispatcher (Phase 2 Line A)
+///
+/// Since Phase 2 this server also holds an optional map of
+/// *forward backends* — `Box<dyn SovdBackend>` values registered with
+/// [`register_forward`](InMemoryServer::register_forward). When a request
+/// arrives for a component that exists in the forward map, the server
+/// dispatches to that backend instead of the local state. Everything else
+/// continues to resolve against the in-memory demo data. This is the
+/// minimum-viable SOVD Gateway pattern from `MASTER-PLAN.md` §2.1,
+/// carved down to what Phase 2 Line A needs for the CDA SIL smoke test.
+#[derive(Clone)]
 pub struct InMemoryServer {
     components: Arc<RwLock<HashMap<ComponentId, ComponentState>>>,
+    forwards: Arc<RwLock<HashMap<ComponentId, Arc<dyn SovdBackend + Send + Sync>>>>,
+}
+
+// Manual Debug impl because `dyn SovdBackend` is not `Debug`.
+impl std::fmt::Debug for InMemoryServer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InMemoryServer")
+            .field("components", &"<async>")
+            .field("forwards", &"<async>")
+            .finish()
+    }
 }
 
 impl InMemoryServer {
@@ -119,6 +141,7 @@ impl InMemoryServer {
     pub fn new_empty() -> Self {
         Self {
             components: Arc::new(RwLock::new(HashMap::new())),
+            forwards: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -185,7 +208,46 @@ impl InMemoryServer {
 
         Self {
             components: Arc::new(RwLock::new(components)),
+            forwards: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+
+    /// Register a forward backend for `component`. Any subsequent SOVD
+    /// request targeting `component` will be dispatched via the backend
+    /// instead of the local demo state (even if the same id also exists
+    /// locally).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::InvalidRequest`] if a forward backend is
+    /// already registered for the same component — forwards are
+    /// write-once, per the gateway pattern (ADR-0015).
+    pub async fn register_forward(
+        &self,
+        backend: Arc<dyn SovdBackend + Send + Sync>,
+    ) -> Result<()> {
+        let component = backend.component_id();
+        let mut guard = self.forwards.write().await;
+        if guard.contains_key(&component) {
+            return Err(SovdError::InvalidRequest(format!(
+                "forward backend already registered for \"{component}\""
+            )));
+        }
+        guard.insert(component, backend);
+        Ok(())
+    }
+
+    /// Return `true` if `component` has a registered forward backend.
+    pub async fn has_forward(&self, component: &ComponentId) -> bool {
+        self.forwards.read().await.contains_key(component)
+    }
+
+    /// Fetch the forward backend for `component`, if any.
+    pub async fn forward(
+        &self,
+        component: &ComponentId,
+    ) -> Option<Arc<dyn SovdBackend + Send + Sync>> {
+        self.forwards.read().await.get(component).cloned()
     }
 
     /// Return a per-component [`SovdServer`] view for `component`.
@@ -212,18 +274,123 @@ impl InMemoryServer {
 
     /// `GET /sovd/v1/components` — list every registered entity.
     ///
+    /// Includes both locally-served demo components and any registered
+    /// forward backends. For forward backends the entity reference is
+    /// synthesized from the component id alone (we do not eagerly call
+    /// `entity_capabilities` on the backend — that would require network
+    /// round-trips on every `list` call).
+    ///
     /// # Errors
     ///
     /// Never fails for the in-memory store (the `Result` is for trait
     /// parity with real backends that may fail).
     pub async fn list_entities(&self) -> Result<DiscoveredEntities> {
-        let guard = self.components.read().await;
-        let mut items: Vec<EntityReference> = guard
-            .values()
-            .map(ComponentState::entity_reference)
-            .collect();
+        let mut items: Vec<EntityReference> = Vec::new();
+        {
+            let guard = self.components.read().await;
+            items.extend(guard.values().map(ComponentState::entity_reference));
+        }
+        {
+            let guard = self.forwards.read().await;
+            for component in guard.keys() {
+                // Only include forwards that are NOT already served locally.
+                if !items.iter().any(|e| e.id == component.as_str()) {
+                    items.push(EntityReference {
+                        id: component.as_str().to_owned(),
+                        name: component.as_str().to_owned(),
+                        translation_id: None,
+                        href: format!("{BASE_URI}/components/{component}"),
+                        tags: None,
+                    });
+                }
+            }
+        }
         items.sort_by(|a, b| a.id.cmp(&b.id));
         Ok(DiscoveredEntities { items })
+    }
+
+    /// Dispatch `list_faults` for `component`, forwarding to the
+    /// registered backend if any, otherwise falling back to the local
+    /// in-memory view.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if neither a forward nor a local
+    /// state exists for `component`. All other errors propagate from the
+    /// chosen backend.
+    pub async fn dispatch_list_faults(
+        &self,
+        component: &ComponentId,
+        filter: FaultFilter,
+    ) -> Result<ListOfFaults> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.list_faults(filter).await;
+        }
+        let view = self.component_server(component).await?;
+        view.list_faults(filter).await
+    }
+
+    /// Dispatch `clear_all_faults`. See
+    /// [`dispatch_list_faults`](Self::dispatch_list_faults) for
+    /// routing semantics and errors.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`.
+    pub async fn dispatch_clear_all_faults(&self, component: &ComponentId) -> Result<()> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.clear_all_faults().await;
+        }
+        let view = self.component_server(component).await?;
+        view.clear_all_faults().await
+    }
+
+    /// Dispatch `clear_fault`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`
+    /// or the code is unknown.
+    pub async fn dispatch_clear_fault(&self, component: &ComponentId, code: &str) -> Result<()> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.clear_fault(code).await;
+        }
+        let view = self.component_server(component).await?;
+        view.clear_fault(code).await
+    }
+
+    /// Dispatch `start_execution`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`.
+    pub async fn dispatch_start_execution(
+        &self,
+        component: &ComponentId,
+        operation_id: &str,
+        request: StartExecutionRequest,
+    ) -> Result<StartExecutionAsyncResponse> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.start_execution(operation_id, request).await;
+        }
+        let view = self.component_server(component).await?;
+        view.start_execution(operation_id, request).await
+    }
+
+    /// Dispatch `entity_capabilities`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`.
+    pub async fn dispatch_entity_capabilities(
+        &self,
+        component: &ComponentId,
+    ) -> Result<EntityCapabilities> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.entity_capabilities().await;
+        }
+        let view = self.component_server(component).await?;
+        view.entity_capabilities().await
     }
 }
 

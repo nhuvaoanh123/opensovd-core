@@ -22,7 +22,6 @@ use axum::{
 use sovd_interfaces::{
     ComponentId,
     spec::component::{DiscoveredEntities, EntityCapabilities},
-    traits::server::SovdServer as _,
 };
 
 use crate::{InMemoryServer, routes::error::ApiError};
@@ -71,8 +70,6 @@ pub async fn get_component(
     State(server): State<Arc<InMemoryServer>>,
     Path(component_id): Path<String>,
 ) -> Result<Json<EntityCapabilities>, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
-    Ok(Json(view.entity_capabilities().await?))
+    let component = ComponentId::new(component_id);
+    Ok(Json(server.dispatch_entity_capabilities(&component).await?))
 }

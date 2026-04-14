@@ -92,10 +92,10 @@ pub async fn start_execution(
     Path((component_id, operation_id)): Path<(String, String)>,
     Json(request): Json<StartExecutionRequest>,
 ) -> Result<Response, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
+    let component = ComponentId::new(component_id);
+    let started = server
+        .dispatch_start_execution(&component, &operation_id, request)
         .await?;
-    let started = view.start_execution(&operation_id, request).await?;
     Ok((StatusCode::ACCEPTED, Json(started)).into_response())
 }
 

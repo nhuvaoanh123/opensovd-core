@@ -31,6 +31,9 @@ use sovd_interfaces::{
     traits::server::SovdServer as _,
 };
 
+// Forward faults go through `InMemoryServer::dispatch_*` helpers so
+// route handlers never have to branch on local-vs-forwarded themselves.
+
 use crate::{InMemoryServer, routes::error::ApiError};
 
 /// Query parameters for `GET .../faults`.
@@ -95,10 +98,12 @@ pub async fn list_faults(
     Path(component_id): Path<String>,
     Query(query): Query<FaultQuery>,
 ) -> Result<Json<ListOfFaults>, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
-    Ok(Json(view.list_faults(query.into_filter()).await?))
+    let component = ComponentId::new(component_id);
+    Ok(Json(
+        server
+            .dispatch_list_faults(&component, query.into_filter())
+            .await?,
+    ))
 }
 
 /// `GET /sovd/v1/components/{component_id}/faults/{fault_code}` — fault
@@ -125,6 +130,11 @@ pub async fn get_fault(
     State(server): State<Arc<InMemoryServer>>,
     Path((component_id, fault_code)): Path<(String, String)>,
 ) -> Result<Json<FaultDetails>, ApiError> {
+    // get_fault is not part of `SovdBackend`; if a forward exists for
+    // this component we do not have a per-fault getter in the backend
+    // contract yet, so we fall through to local state. Forward backends
+    // that need per-fault detail should expose `get_fault` in a future
+    // extension of `SovdBackend` (tracked in MASTER-PLAN Phase 3).
     let view = server
         .component_server(&ComponentId::new(component_id))
         .await?;
@@ -153,10 +163,8 @@ pub async fn clear_all_faults(
     State(server): State<Arc<InMemoryServer>>,
     Path(component_id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
-    view.clear_all_faults().await?;
+    let component = ComponentId::new(component_id);
+    server.dispatch_clear_all_faults(&component).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -184,9 +192,7 @@ pub async fn clear_fault(
     State(server): State<Arc<InMemoryServer>>,
     Path((component_id, fault_code)): Path<(String, String)>,
 ) -> Result<StatusCode, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
-    view.clear_fault(&fault_code).await?;
+    let component = ComponentId::new(component_id);
+    server.dispatch_clear_fault(&component, &fault_code).await?;
     Ok(StatusCode::NO_CONTENT)
 }
