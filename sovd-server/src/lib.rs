@@ -24,6 +24,7 @@ use axum::{Json, Router, routing::get};
 use serde_json::{Value, json};
 
 pub mod in_memory;
+pub mod openapi;
 pub mod routes;
 
 pub use in_memory::{InMemoryComponentServer, InMemoryServer};

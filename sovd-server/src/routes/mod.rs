@@ -44,10 +44,19 @@ pub mod faults;
 pub mod health;
 pub mod operations;
 
+/// Dev-only `GET /sovd/v1/openapi.json` — returns the generated `OpenAPI`
+/// document as JSON. Gated behind `cfg(debug_assertions)` so release
+/// binaries never expose it.
+#[cfg(debug_assertions)]
+pub async fn openapi_json() -> axum::Json<utoipa::openapi::OpenApi> {
+    axum::Json(crate::openapi::openapi())
+}
+
 /// Build the full MVP router for `server`, mounting the health endpoint
-/// plus every in-scope SOVD entity route.
+/// plus every in-scope SOVD entity route. Debug builds additionally
+/// expose `GET /sovd/v1/openapi.json` for spec-generation tooling.
 pub fn app_with_server(server: Arc<InMemoryServer>) -> Router {
-    Router::new()
+    let router = Router::new()
         .route("/sovd/v1/health", get(health::health))
         .route("/sovd/v1/components", get(components::list_components))
         .route(
@@ -73,6 +82,10 @@ pub fn app_with_server(server: Arc<InMemoryServer>) -> Router {
         .route(
             "/sovd/v1/components/{component_id}/operations/{operation_id}/executions/{execution_id}",
             get(operations::execution_status),
-        )
-        .with_state(server)
+        );
+
+    #[cfg(debug_assertions)]
+    let router = router.route("/sovd/v1/openapi.json", get(openapi_json));
+
+    router.with_state(server)
 }
