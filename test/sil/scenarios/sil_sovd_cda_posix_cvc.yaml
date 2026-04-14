@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 2 Line A SIL scenario #3 — PLACEHOLDER.
+#
+# This scenario is structurally identical to Scenario 1 (CDA + upstream
+# ecu-sim over DoIP) but points at a `taktflow-posix-cvc` container
+# running the real Taktflow POSIX vECU firmware from Line B Phase 1.
+#
+# It is DISABLED intentionally until Line B Phase 1 lands DoIP transport
+# in firmware/platform/posix/src/DoIp_Posix.c. When that ships, flip
+# `disabled: false`, rebuild the POSIX vECU docker image with `make -C
+# firmware/targets/posix docker`, deploy it to the Pi via
+# `deploy/pi/install-posix-cvc.sh`, and run the Phase 2 SIL gate.
+#
+# Enabling this scenario is the canary signal that Line B Phase 1 is
+# complete.
+
+name: sil_sovd_cda_posix_cvc
+disabled: true
+reason: >-
+  Enable when Line B Phase 1 lands DoIP POSIX transport in
+  firmware/platform/posix/src/DoIp_Posix.c. Until then, the only
+  working SIL path uses upstream ecu-sim (see sil_sovd_cda_ecusim.yaml).
+
+topology:
+  description: >-
+    CDA runs natively on the Windows dev machine. It speaks DoIP over
+    the bench LAN to a Taktflow POSIX vECU container hosted on the Pi
+    at 192.168.0.197:13400 (same port as the ecu-sim scenario — only
+    one of the two containers may run at a time).
+
+  test_client:
+    host: 127.0.0.1
+    process: integration-tests (cargo test, Windows)
+  cda:
+    host: 127.0.0.1
+    port: 20002
+    config: deploy/sil/opensovd-cda.toml
+  vecu:
+    host: 192.168.0.197
+    port: 13400
+    image: taktflow/posix-cvc:latest
+    source: firmware/targets/posix
+    systemd_unit: posix-cvc.service
+
+calls:
+  - name: list_components
+    method: GET
+    path: /sovd/v1/components
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+    expect_contains_id: cvc
+
+  - name: cvc_faults
+    method: GET
+    path: /sovd/v1/components/cvc/faults
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults
+
+  - name: cvc_operations
+    method: GET
+    path: /sovd/v1/components/cvc/operations
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::operation::OperationsList
+
+  - name: cvc_start_motor_self_test
+    method: POST
+    path: /sovd/v1/components/cvc/operations/motor_self_test/executions
+    body:
+      timeout: 30
+      parameters:
+        mode: quick
+    expect_status: 202
+    expect_type: sovd_interfaces::spec::operation::StartExecutionAsyncResponse
+
+  - name: cvc_poll_motor_self_test
+    method: GET
+    path_template: /sovd/v1/components/cvc/operations/motor_self_test/executions/{exec_id}
+    depends_on: cvc_start_motor_self_test
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::operation::ExecutionStatusResponse
