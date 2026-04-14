@@ -34,3 +34,6 @@ score = []
 [dependencies]
 sovd-interfaces = { workspace = true }
 async-trait = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

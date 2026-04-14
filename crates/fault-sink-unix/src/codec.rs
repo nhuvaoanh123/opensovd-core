@@ -11,14 +11,89 @@
  */
 
 //! Length-prefixed postcard codec shared by both transports.
+//!
+//! The on-wire shape is a `WireFaultRecord` — a postcard-friendly
+//! shadow of [`FaultRecord`] in which `meta` is pre-serialized as a
+//! JSON text blob. postcard intentionally cannot encode dynamic
+//! `serde_json::Value` trees (they use `deserialize_any`), so the codec
+//! round-trips meta through a string at the wire boundary. This keeps
+//! the public [`FaultRecord`] type free of any wire-format
+//! contamination, which is important for the LoLa zero-copy path.
 
-use sovd_interfaces::{SovdError, extras::fault::FaultRecord, types::error::Result};
+use serde::{Deserialize, Serialize};
+use sovd_interfaces::{
+    ComponentId, SovdError,
+    extras::fault::{FaultId, FaultRecord, FaultSeverity},
+    types::error::Result,
+};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 /// Upper bound for a single encoded `FaultRecord`. Guards against a
 /// malicious or corrupted sender sending a huge length prefix that would
 /// otherwise eat memory.
 pub const MAX_FRAME_LEN: usize = 64 * 1024;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct WireFaultRecord {
+    component: String,
+    id: u32,
+    severity: u8,
+    timestamp_ms: u64,
+    meta_json: Option<String>,
+}
+
+impl WireFaultRecord {
+    fn from_record(r: &FaultRecord) -> Result<Self> {
+        let severity = match r.severity {
+            FaultSeverity::Fatal => 1_u8,
+            FaultSeverity::Error => 2,
+            FaultSeverity::Warning => 3,
+            FaultSeverity::Info => 4,
+        };
+        let meta_json = match r.meta.as_ref() {
+            Some(v) => Some(
+                serde_json::to_string(v)
+                    .map_err(|e| SovdError::Internal(format!("meta json encode failed: {e}")))?,
+            ),
+            None => None,
+        };
+        Ok(Self {
+            component: r.component.as_str().to_owned(),
+            id: r.id.0,
+            severity,
+            timestamp_ms: r.timestamp_ms,
+            meta_json,
+        })
+    }
+
+    fn into_record(self) -> Result<FaultRecord> {
+        let severity = match self.severity {
+            1 => FaultSeverity::Fatal,
+            2 => FaultSeverity::Error,
+            3 => FaultSeverity::Warning,
+            4 => FaultSeverity::Info,
+            other => {
+                return Err(SovdError::InvalidRequest(format!(
+                    "unknown severity code {other}"
+                )));
+            }
+        };
+        let meta = match self.meta_json {
+            Some(raw) => Some(
+                serde_json::from_str(&raw)
+                    .map_err(|e| SovdError::Internal(format!("meta json decode failed: {e}")))?,
+            ),
+            None => None,
+        };
+        Ok(FaultRecord {
+            component: ComponentId::new(self.component),
+            id: FaultId(self.id),
+            severity,
+            timestamp_ms: self.timestamp_ms,
+            meta,
+        })
+    }
+}
 
 /// Encode a [`FaultRecord`] into the on-wire framed bytes.
 ///
@@ -27,7 +102,8 @@ pub const MAX_FRAME_LEN: usize = 64 * 1024;
 /// Returns [`SovdError::Internal`] if postcard encoding fails or the
 /// frame exceeds [`MAX_FRAME_LEN`].
 pub fn encode_frame(record: &FaultRecord) -> Result<Vec<u8>> {
-    let payload = postcard::to_allocvec(record)
+    let wire = WireFaultRecord::from_record(record)?;
+    let payload = postcard::to_allocvec(&wire)
         .map_err(|e| SovdError::Internal(format!("postcard encode failed: {e}")))?;
     if payload.len() > MAX_FRAME_LEN {
         return Err(SovdError::InvalidRequest(format!(
@@ -90,8 +166,9 @@ pub async fn read_frame<R: AsyncReadExt + Unpin>(reader: &mut R) -> Result<Optio
         .read_exact(&mut payload)
         .await
         .map_err(|e| SovdError::Transport(format!("fault-sink read payload: {e}")))?;
-    let record: FaultRecord = postcard::from_bytes(&payload)
+    let wire: WireFaultRecord = postcard::from_bytes(&payload)
         .map_err(|e| SovdError::Internal(format!("postcard decode failed: {e}")))?;
+    let record = wire.into_record()?;
     Ok(Some(record))
 }
 
