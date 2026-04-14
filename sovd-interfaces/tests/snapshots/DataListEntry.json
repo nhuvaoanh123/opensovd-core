@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "description": "Description of one specific data list provided by an entity.\n\nProvenance: `data/types.yaml#DataListEntry`.",
+  "required": [
+    "id",
+    "items"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the data list."
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/ValueMetadata"
+      },
+      "description": "Members of the data list (each entry is one value's metadata)."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to this data list."
+    }
+  }
+}

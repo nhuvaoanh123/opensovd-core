@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "description": "Capability that may be applied to an operation execution.\n\nProvenance: `operations/types.yaml#Capability`.",
+  "enum": [
+    "execute",
+    "stop",
+    "freeze",
+    "reset",
+    "status"
+  ]
+}

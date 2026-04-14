@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "description": "202 response body for an asynchronous execution start.\n\nProvenance: `operations/responses.yaml#StartExecutionAsynchronous`\n(inline schema). The `Location` HTTP header is carried separately by\nthe transport layer.",
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identifier for tracking the execution."
+    },
+    "status": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ExecutionStatus",
+          "description": "Initial status, normally `Running`."
+        }
+      ]
+    }
+  }
+}

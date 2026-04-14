@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "description": "Reference to one entity in a discovery list.\n\nProvenance: `commons/types.yaml#EntityReference`.\n\n`id`, `name`, and `href` are required by the spec.",
+  "required": [
+    "id",
+    "name",
+    "href"
+  ],
+  "properties": {
+    "href": {
+      "type": "string",
+      "description": "Absolute URI of the entity (including `{base_uri}`)."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the entity."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to this entity."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `name`."
+    }
+  }
+}

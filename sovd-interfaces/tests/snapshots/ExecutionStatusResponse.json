@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../operations/{op-id}/executions/{execution-id}`.\n\nProvenance: `operations/responses.yaml#GetExecutionStatus` (inline schema).",
+  "required": [
+    "capability"
+  ],
+  "properties": {
+    "capability": {
+      "$ref": "#/components/schemas/Capability",
+      "description": "Capability currently being applied."
+    },
+    "error": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/components/schemas/DataError"
+      },
+      "description": "Errors raised during execution."
+    },
+    "parameters": {
+      "description": "Operation parameters. Open `AnyValue` per spec."
+    },
+    "schema": {
+      "description": "Optional embedded JSON Schema describing the response shape."
+    },
+    "status": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ExecutionStatus",
+          "description": "Current status."
+        }
+      ]
+    }
+  }
+}

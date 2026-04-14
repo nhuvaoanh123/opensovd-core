@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../operations/{operation-id}`.\n\nProvenance: `operations/responses.yaml#OperationDetails` (inline schema).",
+  "required": [
+    "item"
+  ],
+  "properties": {
+    "item": {
+      "$ref": "#/components/schemas/OperationDescription",
+      "description": "Description of the operation."
+    },
+    "modes": {
+      "description": "Modes the entity must be in for this operation to execute. Open\n`object` per spec — we carry it as `serde_json::Value`."
+    },
+    "proximity_challenge": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ProximityChallenge",
+          "description": "Proximity challenge, present only if `item.proximity_proof_required`."
+        }
+      ]
+    },
+    "schema": {
+      "description": "Optional embedded JSON Schema describing the response shape."
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "description": "SOVD partial-error envelope, used when only one element of a structured\nresponse failed.\n\nProvenance: `commons/errors.yaml#DataError`.\n\n`path` is a JSON Pointer pointing at the offending field of the response\nbody. `error` describes the failure in more detail.",
+  "required": [
+    "path"
+  ],
+  "properties": {
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/GenericError",
+          "description": "Detailed error describing why `path` failed."
+        }
+      ]
+    },
+    "path": {
+      "type": "string",
+      "description": "JSON Pointer to the offending element of the response."
+    }
+  }
+}

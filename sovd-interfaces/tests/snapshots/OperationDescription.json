@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "description": "Description of one operation defined for an entity.\n\nProvenance: `operations/types.yaml#OperationDescription`.",
+  "required": [
+    "id",
+    "proximity_proof_required",
+    "asynchronous_execution"
+  ],
+  "properties": {
+    "asynchronous_execution": {
+      "type": "boolean",
+      "description": "True if the operation runs asynchronously (POST returns 202)."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for this operation."
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable name."
+    },
+    "proximity_proof_required": {
+      "type": "boolean",
+      "description": "True if the operation requires a fresh proof of physical proximity."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to this operation."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `name`."
+    }
+  }
+}

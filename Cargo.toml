@@ -73,6 +73,7 @@ url = "2.5.7"
 clap = { version = "4.5", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 schemars = "1.1.0"
+utoipa = { version = "5", features = ["chrono", "uuid"] }
 aide = "0.16.0-alpha.1"
 # ---- CDA-specific MDD / self-ref / mmap / build-script-config crates ----
 ouroboros = "0.18.5"

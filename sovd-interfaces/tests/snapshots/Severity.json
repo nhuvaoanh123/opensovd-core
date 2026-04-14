@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "description": "SOVD severity levels for log-style values.\n\nProvenance: `commons/types.yaml#Severity`.",
+  "enum": [
+    "fatal",
+    "error",
+    "warn",
+    "info",
+    "debug"
+  ]
+}

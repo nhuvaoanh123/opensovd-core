@@ -1,0 +1,10 @@
+{
+  "type": "string",
+  "description": "Which kind of entity collection an entity lives in.\n\nProvenance: `commons/parameters.yaml#EntityCollection` (path parameter,\nschema enum).",
+  "enum": [
+    "areas",
+    "components",
+    "apps",
+    "functions"
+  ]
+}

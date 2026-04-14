@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "description": "Response body for `GET /{entity-collection}` with optional schema embed.\n\nProvenance: `discovery/responses.yaml#discoveredEntitiesWithSchema`\n(inline schema).",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/EntityReference"
+      },
+      "description": "All entities in the collection."
+    },
+    "schema": {
+      "description": "Optional embedded JSON Schema describing the response shape."
+    }
+  }
+}

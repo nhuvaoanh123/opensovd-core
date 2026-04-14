@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "description": "Response body for `GET /{entity-collection}` (no inline schema).\n\nProvenance: `discovery/responses.yaml#discoveredEntities` (inline schema).\n\nUsed for the simpler list endpoints that do not also expose\n`?include-schema=true`.",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/EntityReference"
+      },
+      "description": "All entities in the collection."
+    }
+  }
+}

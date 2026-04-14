@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "description": "Request body for `POST .../operations/{operation-id}/executions`.\n\nProvenance: `operations/requests.yaml#StartExecution` (inline schema).",
+  "properties": {
+    "parameters": {
+      "description": "Operation parameters. Open `AnyValue` per spec."
+    },
+    "proximity_response": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Response to the proximity challenge, if one was issued."
+    },
+    "timeout": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int64",
+      "description": "Server-side timeout in seconds before the execution is auto-stopped."
+    }
+  }
+}

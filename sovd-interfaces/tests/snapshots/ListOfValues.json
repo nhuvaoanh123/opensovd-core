@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../data-lists/{data-list-id}`.\n\nProvenance: `commons/types.yaml#ListOfValues`.",
+  "properties": {
+    "items": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {},
+      "description": "All values returned in this read batch."
+    }
+  }
+}

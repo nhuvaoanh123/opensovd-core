@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "description": "Response body for `GET .../operations/{op-id}/executions`.\n\nProvenance: `operations/responses.yaml#GetExecutions` (inline schema).",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "All currently existing execution identifiers."
+    }
+  }
+}

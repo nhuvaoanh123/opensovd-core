@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "description": "Request body for `PUT .../operations/{operation-id}/executions/{execution-id}`.\n\nProvenance: `operations/requests.yaml#OtherCapabilities` (inline schema).",
+  "required": [
+    "capability"
+  ],
+  "properties": {
+    "capability": {
+      "$ref": "#/components/schemas/Capability",
+      "description": "Capability to apply."
+    },
+    "parameters": {
+      "description": "Capability parameters. Open `AnyValue` per spec."
+    },
+    "proximity_response": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Response to the proximity challenge, if one was issued."
+    },
+    "timeout": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int64",
+      "description": "Server-side timeout in seconds."
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "description": "Response body for `GET /{entity-collection}/{entity-id}/faults`.\n\nProvenance: `faults/types.yaml#ListOfFaults`.\n\n`schema` is only present if the request was made with\n`?include-schema=true`; we carry it as an opaque JSON value to avoid\nmodelling the full `OpenAPI` 3.1 meta-schema.",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/Fault"
+      },
+      "description": "All faults that match the request filter."
+    },
+    "schema": {
+      "description": "Optional embedded JSON Schema describing the response shape."
+    }
+  }
+}

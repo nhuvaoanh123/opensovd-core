@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "description": "One read result from the SOVD `data` endpoint.\n\nProvenance: `commons/types.yaml#Value`.",
+  "required": [
+    "id",
+    "data"
+  ],
+  "properties": {
+    "data": {
+      "description": "Retrieved value payload (open `object` per spec)."
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/DataError",
+          "description": "Per-value error (only set if reading this single value failed)."
+        }
+      ]
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the value."
+    },
+    "metadata": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ValueMetadata",
+          "description": "Metadata describing the value."
+        }
+      ]
+    }
+  }
+}

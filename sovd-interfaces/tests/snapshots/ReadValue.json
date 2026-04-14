@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "description": "Single-value read result returned from `GET .../data/{data-id}`.\n\nProvenance: `commons/types.yaml#ReadValue`.",
+  "required": [
+    "id",
+    "data"
+  ],
+  "properties": {
+    "data": {
+      "description": "Decoded value payload (`AnyValue` per spec — open)."
+    },
+    "errors": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/components/schemas/DataError"
+      },
+      "description": "Errors encountered while reading parts of `data`."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the value."
+    },
+    "schema": {
+      "description": "Optional embedded JSON Schema describing the response shape."
+    }
+  }
+}

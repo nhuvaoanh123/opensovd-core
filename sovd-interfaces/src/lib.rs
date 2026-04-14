@@ -36,6 +36,7 @@
 //!   [`opensovd/docs/design/design.md`](../../../opensovd/docs/design/design.md)
 //!   are called out inline.
 
+pub mod spec;
 pub mod traits;
 pub mod types;
 

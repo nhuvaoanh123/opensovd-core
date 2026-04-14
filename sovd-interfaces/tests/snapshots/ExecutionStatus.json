@@ -1,0 +1,9 @@
+{
+  "type": "string",
+  "description": "Lifecycle state of one operation execution.\n\nProvenance: `operations/types.yaml#ExecutionStatus`.",
+  "enum": [
+    "running",
+    "completed",
+    "failed"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "description": "Response body for `GET /{entity-collection}/{entity-id}/operations`.\n\nProvenance: `operations/responses.yaml#Operations` (inline schema).",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/OperationDescription"
+      },
+      "description": "All operations defined for the entity."
+    },
+    "schema": {
+      "description": "Optional embedded JSON Schema describing the response shape."
+    }
+  }
+}

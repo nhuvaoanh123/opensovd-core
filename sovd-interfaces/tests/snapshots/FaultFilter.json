@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "description": "Filter applied to `GET .../faults`.\n\nProvenance: combined view of `faults/parameters.yaml` query parameters.\n\nThe spec allows three independent filters:\n- `status[key]` (repeated query parameter; entries are OR-combined)\n- `severity` (integer; matches faults strictly below the given level)\n- `scope` (string; one of the entity-supported scopes)\n\nWe model it as a struct rather than a flat tuple so that future additions\n(e.g. a future `from_timestamp` parameter) do not break call sites.",
+  "properties": {
+    "scope": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Scope (capability-defined string)."
+    },
+    "severity": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int32",
+      "description": "Severity threshold. A fault matches if `fault.severity < severity`."
+    },
+    "status_keys": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": false,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "description": "Status-key matches. Each entry is `(key, value)`. Entries are\nOR-combined: a fault matches if **any** entry matches its status\nobject."
+    }
+  }
+}

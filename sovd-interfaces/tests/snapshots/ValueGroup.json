@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "description": "Description of one value group.\n\nProvenance: `data/types.yaml#ValueGroup`.",
+  "required": [
+    "id",
+    "category"
+  ],
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "Category the group is defined for."
+    },
+    "category_translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `category`."
+    },
+    "group": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Display name of the group."
+    },
+    "group_translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `group`."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the group, unique across all categories."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to the group."
+    }
+  }
+}

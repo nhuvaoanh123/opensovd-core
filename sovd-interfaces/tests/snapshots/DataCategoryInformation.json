@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "description": "Description of one supported data category.\n\nProvenance: `data/types.yaml#DataCategoryInformation`.",
+  "required": [
+    "item"
+  ],
+  "properties": {
+    "category_translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating the category name."
+    },
+    "item": {
+      "type": "string",
+      "description": "Category name (free string; URL-safe per spec pattern)."
+    }
+  }
+}

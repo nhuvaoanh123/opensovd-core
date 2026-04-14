@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "description": "SOVD generic error envelope.\n\nProvenance: `commons/errors.yaml#GenericError`.\n\nReturned in the body of any non-2xx SOVD response. The `error_code` is\na SOVD-standardised code; `vendor_code` is filled when the error is\nvendor-specific. `parameters` carries open key/value detail.",
+  "required": [
+    "error_code",
+    "message"
+  ],
+  "properties": {
+    "error_code": {
+      "type": "string",
+      "description": "SOVD standardised error code."
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable problem description."
+    },
+    "parameters": {
+      "description": "Additional key/value detail about the error."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `message`."
+    },
+    "vendor_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Vendor-specific error code, set when `error_code` is vendor-specific."
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "description": "200 response body for a synchronous execution start.\n\nProvenance: `operations/responses.yaml#StartExecutionSynchronous`\n(inline schema).",
+  "properties": {
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/GenericError",
+          "description": "Error, if the operation failed."
+        }
+      ]
+    },
+    "parameters": {
+      "description": "Operation response parameters. Open `object` per spec."
+    }
+  }
+}

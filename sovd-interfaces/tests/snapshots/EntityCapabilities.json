@@ -1,0 +1,140 @@
+{
+  "type": "object",
+  "description": "Response body for `GET /{entity-collection}/{entity-id}`.\n\nProvenance: `discovery/responses.yaml#discoveredEntityCapabilities`\n(inline schema — the spec does not name it; we coin\n`EntityCapabilities`).\n\nMost of the fields are URI references to subordinate resource\ncollections (`faults`, `data`, `operations`, …) and are only set if\nthe entity supports that resource.",
+  "required": [
+    "id",
+    "name"
+  ],
+  "properties": {
+    "bulk-data": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the bulk-data sub-collection."
+    },
+    "configurations": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the configurations sub-collection."
+    },
+    "data": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the data sub-collection."
+    },
+    "data-lists": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the data-lists sub-collection."
+    },
+    "depends-on": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the depends-on reference collection."
+    },
+    "faults": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the faults sub-collection."
+    },
+    "hosts": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the hosts reference collection."
+    },
+    "id": {
+      "type": "string",
+      "description": "Entity-Id, e.g. `\"AdvancedLaneKeeping\"`."
+    },
+    "is-located-on": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the parent component (apps only)."
+    },
+    "locks": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the locks sub-collection."
+    },
+    "logs": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the logs collection."
+    },
+    "modes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the modes sub-collection."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the entity."
+    },
+    "operations": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the operations sub-collection."
+    },
+    "scripts": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the scripts collection."
+    },
+    "subareas": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the subareas sub-collection (areas only)."
+    },
+    "subcomponents": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the subcomponents sub-collection (components only)."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `name`."
+    },
+    "updates": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URI to the updates sub-collection."
+    },
+    "variant": {
+      "description": "Variant identification (open structure per spec — `AnyValue`)."
+    }
+  }
+}

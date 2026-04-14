@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "description": "Proximity-challenge envelope, used by operations that require fresh\nphysical-proximity proof.\n\nProvenance: `commons/types.yaml#ProximityChallenge`.",
+  "required": [
+    "challenge",
+    "valid_until"
+  ],
+  "properties": {
+    "challenge": {
+      "type": "string",
+      "description": "Challenge string the SOVD client must solve."
+    },
+    "valid_until": {
+      "type": "string",
+      "description": "Absolute UTC timestamp at which the challenge expires.\n(RFC 3339 / ISO 8601 string.)"
+    }
+  }
+}

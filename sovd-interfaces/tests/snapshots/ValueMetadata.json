@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "description": "Metadata describing a data value.\n\nProvenance: `commons/types.yaml#ValueMetadata`.",
+  "required": [
+    "id",
+    "name",
+    "category"
+  ],
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "Category, e.g. `currentData`, `identData`, `sysInfo`, or\n`x-<oem>-…`. The spec restricts the string to URL-safe characters\nmatching `^[A-Za-z0-9_-]+$`; we do not enforce that at type level."
+    },
+    "groups": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Group identifiers the value belongs to."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the value (e.g. `\"DriverWindow\"`)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to this value."
+    },
+    "translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `name`."
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "description": "A single SOVD fault entry.\n\nProvenance: `faults/types.yaml#Fault`.\n\n`code` and `fault_name` are required by the spec. Every other field is\noptional and may be omitted by the entity.",
+  "required": [
+    "code",
+    "fault_name"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Native fault code, e.g. `\"0012E3\"`, `\"P102\"`, `\"modelMissing\"`."
+    },
+    "display_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Display representation of `code`, e.g. `\"P102\"`."
+    },
+    "fault_name": {
+      "type": "string",
+      "description": "Human-readable fault name."
+    },
+    "fault_translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `fault_name`."
+    },
+    "scope": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Scope of the fault (e.g. user-defined fault memory). Capability-defined."
+    },
+    "severity": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int32",
+      "description": "Severity. Spec convention: `1=FATAL, 2=ERROR, 3=WARN, 4=INFO`."
+    },
+    "status": {
+      "description": "OEM-specific status key/value object. For classic ECUs typically\nincludes the UDS DTC status-byte bits."
+    },
+    "symptom": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "OEM-specific symptom / failure-mode description."
+    },
+    "symptom_translation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Identifier for translating `symptom`."
+    },
+    "tags": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags attached to this fault entry."
+    }
+  }
+}
