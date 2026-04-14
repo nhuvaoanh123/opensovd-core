@@ -200,6 +200,33 @@ pub fn stop_ecu_sim() {
     }
 }
 
+/// Convert a Windows-style path (`H:\foo\bar`) to the MSYS / git-bash
+/// POSIX convention (`/h/foo/bar`) so it can be passed to `bash` as a
+/// regular argument without backslash-escape loss.
+fn to_posix_path(windows_path: &str) -> String {
+    let mut out = String::with_capacity(windows_path.len().saturating_add(2));
+    let trimmed = windows_path.trim_start_matches(r"\\?\");
+    let mut chars = trimmed.chars();
+    if let (Some(drive), Some(colon)) = (chars.next(), chars.next()) {
+        if colon == ':' && drive.is_ascii_alphabetic() {
+            out.push('/');
+            out.push(drive.to_ascii_lowercase());
+            // skip the drive + colon; the remainder starts after.
+        } else {
+            out.push(drive);
+            out.push(colon);
+        }
+    }
+    for ch in chars {
+        if ch == '\\' {
+            out.push('/');
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
 /// Locate `deploy/sil/run-cda-local.sh` relative to the integration-tests
 /// crate manifest. Returns an error if the path does not exist.
 fn cda_launch_script() -> Result<PathBuf, String> {
@@ -219,36 +246,135 @@ fn cda_launch_script() -> Result<PathBuf, String> {
     Ok(script)
 }
 
-/// Spawn the local CDA process via `deploy/sil/run-cda-local.sh` under
-/// `bash`, then wait for `127.0.0.1:20002` to accept TCP connections.
-/// Returns the `Child` handle so the caller can kill it on teardown.
+/// Locate the CDA binary. Honours `TAKTFLOW_CDA_BIN` if set, otherwise
+/// uses the sibling `classic-diagnostic-adapter/target/release/opensovd-cda.exe`
+/// path the SIL launch script expects.
+fn cda_binary() -> Result<PathBuf, String> {
+    if let Ok(user) = env::var("TAKTFLOW_CDA_BIN") {
+        if !user.is_empty() {
+            let p = PathBuf::from(user);
+            if !p.exists() {
+                return Err(format!("TAKTFLOW_CDA_BIN={} does not exist", p.display()));
+            }
+            return Ok(p);
+        }
+    }
+    let manifest = env!("CARGO_MANIFEST_DIR");
+    let repo_parent = PathBuf::from(manifest)
+        .parent() // integration-tests -> opensovd-core
+        .ok_or_else(|| format!("no parent for {manifest}"))?
+        .parent() // opensovd-core -> eclipse-opensovd
+        .ok_or_else(|| format!("no grandparent for {manifest}"))?
+        .to_path_buf();
+    let bin = repo_parent
+        .join("classic-diagnostic-adapter")
+        .join("target")
+        .join("release")
+        .join("opensovd-cda.exe");
+    if !bin.exists() {
+        return Err(format!("CDA binary not found at {}", bin.display()));
+    }
+    Ok(bin)
+}
+
+/// Locate the CDA TOML config used for SIL runs.
+fn cda_config() -> Result<PathBuf, String> {
+    let manifest = env!("CARGO_MANIFEST_DIR");
+    let p = PathBuf::from(manifest)
+        .parent()
+        .ok_or_else(|| format!("no parent for {manifest}"))?
+        .join("deploy")
+        .join("sil")
+        .join("opensovd-cda.toml");
+    if !p.exists() {
+        return Err(format!("CDA config not found at {}", p.display()));
+    }
+    Ok(p)
+}
+
+/// Probe CDA's SOVD route surface by posting to `/vehicle/v15/authorize`.
+/// Returns `true` once CDA responds with 2xx (routes mounted and security
+/// plugin initialised). We avoid an unauthenticated GET probe because
+/// CDA's `aide` router serves 404 for unknown paths even while the
+/// `DoIP` gateway handshake is still in flight, and we can't
+/// distinguish "routes not mounted" from "route genuinely missing" at
+/// the status level.
+async fn cda_routes_ready(client: &reqwest::Client) -> bool {
+    let url = format!("{CDA_BASE_URL}/vehicle/v15/authorize");
+    let body = serde_json::json!({
+        "client_id": "bench-readiness-probe",
+        "client_secret": "unused",
+    });
+    match tokio::time::timeout(Duration::from_secs(2), client.post(&url).json(&body).send()).await {
+        Ok(Ok(r)) => r.status().is_success(),
+        Ok(Err(_)) | Err(_) => false,
+    }
+}
+
+/// Poll `POST /vehicle/v15/authorize` every 500 ms until CDA accepts
+/// the request (routes mounted + security plugin ready) or `deadline`
+/// elapses. Returns `true` on success.
+async fn wait_for_cda_routes(deadline: Duration) -> bool {
+    let Ok(client) = reqwest::Client::builder()
+        .timeout(Duration::from_secs(2))
+        .build()
+    else {
+        return false;
+    };
+    let start = Instant::now();
+    while start.elapsed() < deadline {
+        if cda_routes_ready(&client).await {
+            return true;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    false
+}
+
+/// Spawn the local CDA process directly (no shell wrapper), mirroring
+/// what `deploy/sil/run-cda-local.sh` does: sets `CDA_CONFIG_FILE` and
+/// execs the binary. We avoid `bash` because:
+///
+/// - git-bash's `exec` replacement is unreliable on Windows — it
+///   occasionally leaves the CDA grandchild orphaned when we kill the
+///   bash parent, leaking a process between test runs.
+/// - Windows `Command::kill` on the CDA process directly calls
+///   `TerminateProcess`, which is immediate and reliable.
+///
+/// After spawn we wait for the SOVD `/vehicle/v15` route surface to
+/// actually accept requests — a plain TCP-accept probe is not enough
+/// because CDA binds the aide router early and only mounts the
+/// vehicle routes once the `DoIP` gateway handshake completes.
 pub fn start_cda() -> Result<Child, String> {
-    let script = cda_launch_script()?;
-    eprintln!("[bench] launching CDA via {}", script.display());
-    // Use `bash` explicitly so this works whether we're invoked from
-    // git-bash, MSYS, or cmd.
-    let child = Command::new("bash")
-        .arg(
-            script
-                .to_str()
-                .ok_or_else(|| format!("non-utf8 path {}", script.display()))?,
-        )
+    let bin = cda_binary()?;
+    let cfg = cda_config()?;
+    eprintln!("[bench] launching CDA binary {}", bin.display());
+    eprintln!("[bench]   with config   {}", cfg.display());
+    let child = Command::new(&bin)
+        .env("CDA_CONFIG_FILE", &cfg)
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
-        .map_err(|e| format!("spawn cda launch script: {e}"))?;
+        .map_err(|e| format!("spawn {}: {e}", bin.display()))?;
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .map_err(|e| format!("build probe runtime: {e}"))?;
-    let ready = rt.block_on(wait_for_tcp(CDA_TCP_ADDR, Duration::from_secs(30)));
-    if !ready {
+    let tcp_ready = rt.block_on(wait_for_tcp(CDA_TCP_ADDR, Duration::from_secs(15)));
+    if !tcp_ready {
         return Err(format!(
-            "CDA spawned but {CDA_TCP_ADDR} did not accept TCP within 30s"
+            "CDA spawned but {CDA_TCP_ADDR} did not accept TCP within 15s"
         ));
     }
-    eprintln!("[bench] CDA loopback port reachable");
+    eprintln!("[bench] CDA loopback port reachable (TCP); waiting for /vehicle/v15 routes");
+    let routes_ready = rt.block_on(wait_for_cda_routes(Duration::from_secs(30)));
+    if !routes_ready {
+        return Err(
+            "CDA TCP is up but /vehicle/v15/authorize never returned 2xx within 30s".to_owned(),
+        );
+    }
+    eprintln!("[bench] CDA /vehicle/v15 routes mounted");
     Ok(child)
 }
 
