@@ -20,7 +20,7 @@
 //!
 //! # Path prefix note
 //!
-//! Upstream Eclipse OpenSOVD CDA exposes SOVD routes under `/vehicle/v15`
+//! Upstream Eclipse `OpenSOVD` CDA exposes SOVD routes under `/vehicle/v15`
 //! (the historical SOVD 1.0 draft path). Our Phase 2 Line B server will
 //! expose `/sovd/v1`, so `sovd_interfaces::spec::*` docs reference the
 //! `/sovd/v1/...` surface. For SIL tests that hit CDA directly we use
@@ -125,8 +125,8 @@ async fn acquire_bearer(client: &reqwest::Client) -> String {
         .await
         .unwrap_or_else(|e| panic!("POST {url}: read body: {e}"));
     assert!(status.is_success(), "POST {url} -> {status}; body = {raw}");
-    let auth: AuthBody = serde_json::from_str(&raw)
-        .unwrap_or_else(|e| panic!("parse AuthBody: {e}; body = {raw}"));
+    let auth: AuthBody =
+        serde_json::from_str(&raw).unwrap_or_else(|e| panic!("parse AuthBody: {e}; body = {raw}"));
     auth.access_token
 }
 
