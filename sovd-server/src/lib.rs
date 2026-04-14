@@ -12,28 +12,24 @@
 
 //! HTTP/REST SOVD server for the Eclipse `OpenSOVD` core stack.
 //!
-//! Phase 0 exposes only `GET /sovd/v1/health` to prove the axum + tokio
-//! plumbing works end-to-end. Real SOVD entity routes land in Phase 3.
+//! Phase 0 boots a bare `GET /sovd/v1/health` endpoint via [`app`]. Phase 1
+//! adds the in-memory MVP server via [`in_memory::InMemoryServer`] +
+//! [`routes::app_with_server`], which wires spec-typed route handlers for
+//! the five MVP use cases (faults, operations, components, data) against
+//! canned demo data. The real DFM-backed server lands in Phase 3/4.
 //!
-//! See [`ARCHITECTURE.md`](../../ARCHITECTURE.md) for role boundaries. This
-//! crate serves **one component** — system-wide multiplexing is
-//! `sovd-gateway`'s job.
+//! See [`ARCHITECTURE.md`](../../ARCHITECTURE.md) for role boundaries.
 
 use axum::{Json, Router, routing::get};
 use serde_json::{Value, json};
 
-/// SOVD Server instance for a single ECU / component.
-///
-/// Will implement [`sovd_interfaces::traits::server::SovdServer`] in
-/// Phase 3. Fields (component metadata, DFM handle, MDD provider,
-/// routine registry) are added then.
-pub struct Server {
-    // fields added in Phase 3
-}
+pub mod in_memory;
 
-/// Build the SOVD HTTP router.
-///
-/// Phase 0 only mounts the health endpoint.
+pub use in_memory::{InMemoryComponentServer, InMemoryServer};
+
+/// Build a bare-bones SOVD HTTP router that only exposes the health
+/// endpoint. Used when `sovd-main` is configured with `server.mode =
+/// "hello_world"`.
 pub fn app() -> Router {
     Router::new().route("/sovd/v1/health", get(health))
 }
