@@ -1,0 +1,2 @@
+[rtk] /!\ No hook installed — run `rtk init -g` for automatic token savings
+cargo test: 2 passed (1 suite, 0.01s)

@@ -1,0 +1,80 @@
+[preflight] pinging Pi 192.168.0.197
+[preflight] Pi reachable
+[preflight] checking ecu-sim on Pi via ssh
+[preflight] ecu-sim container running on Pi
+[launch] starting CDA
+  binary: /h/eclipse-opensovd/opensovd-core/../classic-diagnostic-adapter/target/release/opensovd-cda.exe
+  config: /h/eclipse-opensovd/opensovd-core/deploy/sil/opensovd-cda.toml
+Loading configuration from H:/eclipse-opensovd/opensovd-core/deploy/sil/opensovd-cda.toml
+[2m15:47:50.232[0m [32mINFO[0m[2m in [0m[1mevent cda-main\src\main.rs:99[0m[2m msg: [0mStarting CDA - version 0.1.0
+[2m15:47:50.234[0m [32mINFO[0m[2m in [0m[1mevent cda-main\src\lib.rs:298[0m[2m msg: [0mLoading databases [3mchunk_size[0m[2m=[0m1
+[2m    in [0mopensovd_cda_lib::[1mload_databases[0m
+[2m15:47:50.239[0m [32mINFO[0m[2m in [0m[1mevent cda-main\src\lib.rs:362[0m[2m msg: [0mLoaded databases [3mdatabase_count[0m[2m=[0m2 [3mduration[0m[2m=[0m4.9954ms
+[2m    in [0mopensovd_cda_lib::[1mload_databases[0m
+[2m15:47:50.239[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\lib.rs:182[0m[2m msg: [0mInitializing DoipDiagGateway
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.239[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:42[0m[2m msg: [0mBroadcasting VIR
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.240[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:67[0m[2m msg: [0mWaiting for VIRs...
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.240[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:73[0m[2m msg: [0mSkipping own VIR
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.240[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:67[0m[2m msg: [0mWaiting for VIRs...
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.409[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:67[0m[2m msg: [0mWaiting for VIRs...
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.414[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:363[0m[2m msg: [0mVAM received but no matching ECU found
+[2m    in [0mcda_comm_doip::vir_vam::[1mhandle_vam[0m
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.414[0m [31mERROR[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:79[0m[2m msg: [0mFailed to handle VAM [3merror[0m[2m=[0m"No matching ECU found for VAM: [20, 00]"
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:50.414[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:67[0m[2m msg: [0mWaiting for VIRs...
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:51.245[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:63[0m[2m msg: [0mFinished waiting for VIRs
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:51.245[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\lib.rs:209[0m[2m msg: [0mGateways found [3mgateway_count[0m[2m=[0m1
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:51.305[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\ecu_connection.rs:363[0m[2m msg: [0mRouting activated
+[2m    in [0mcda_comm_doip::ecu_connection::[1mestablish_ecu_connection[0m
+[2m    in [0mcda_comm_doip::connections::[1mconnection_handler[0m
+[2m    in [0mcda_comm_doip::connections::[1mhandle_gateway_connection[0m
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:51.305[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\connections.rs:178[0m[2m msg: [0mConnected to gateway
+[2m    in [0mcda_comm_doip::connections::[1mhandle_gateway_connection[0m
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:51.306[0m [32mINFO[0m[2m in [0m[1mevent cda-comm-doip\src\vir_vam.rs:255[0m[2m msg: [0mListening for spontaneous VAMs
+[2m    in [0mcda_comm_doip::[1mnew[0m
+[2m    in [0mopensovd_cda_lib::[1mcreate_diagnostic_gateway[0m
+[2m15:47:51.306[0m [32mINFO[0m[2m in [0m[1mevent cda-core\src\diag_kernel\ecumanager.rs:4534[0m[2m msg: [0mVoid security plugin provided, skipping security check
+[2m    in [0mcda_core::diag_kernel::ecumanager::[1mcheck_security_plugin[0m
+[2m    in [0mcda_core::diag_kernel::ecumanager::[1mcheck_service_access[0m
+[2m    in [0mcreate_uds_payload::[1mcreate_uds_payload[0m
+[2m    in [0mcda_comm_uds::[1msend_with_optional_timeout[0m
+[2m    in [0mcda_comm_uds::[1mdetect_variant[0m
+[2m15:47:51.309[0m [32mINFO[0m[2m in [0m[1mevent cda-sovd\src\lib.rs:150[0m[2m msg: [0mVehicle routes added to webserver
+[2m    in [0mcda_sovd::[1madd_vehicle_routes[0m
+[2m15:47:51.312[0m [32mINFO[0m[2m in [0m[1mevent cda-main\src\main.rs:200[0m[2m msg: [0mCDA fully initialized and ready to serve requests
+[2m15:48:12.433[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:48:12.433[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:48:12.434[0m [33mWARN[0m[2m in [0m[1mevent cda-plugin-security\src\default_security_plugin.rs:245[0m[2m msg: [0mFailed to extract token [3merror[0m[2m=[0mHeader of type `authorization` was missing
+[2m15:49:14.065[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:49:14.065[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:51:11.624[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:51:11.624[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:51:30.771[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:51:30.771[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:51:41.730[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB
+[2m15:51:41.730[0m [33mWARN[0m[2m in [0m[1mevent cda-comm-uds\src\lib.rs:1195[0m[2m msg: [0mUnable to fetch Sdgs for flxcng1000: Invalid database: No SDG found in DB

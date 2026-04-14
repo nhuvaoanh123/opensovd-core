@@ -1,0 +1,723 @@
+[1/4] Syncing ecu-sim source to taktflow-pi@192.168.0.197:~/ecu-sim/
+[2/4] Building docker image taktflow/cda-ecu-sim:latest on the Pi (aarch64)
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 955B 0.0s done
+#1 DONE 0.2s
+
+#2 [internal] load metadata for docker.io/library/gradle:8-jdk21
+#2 DONE 3.7s
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre
+#3 DONE 3.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context:
+#4 transferring context: 2B done
+#4 DONE 0.1s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 resolve docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 resolve docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928 0.2s done
+#6 ...
+
+#5 [internal] load build context
+#5 transferring context: 186.76kB 0.1s done
+#5 DONE 0.6s
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 resolve docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec 0.2s done
+#7 DONE 1.2s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 DONE 1.6s
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:3f199c35f5162fea3c8f07eef1e388cab02e2e3f619c9b2842b8bcd77a768e1e 0B / 2.28kB 0.2s
+#7 sha256:80e0252f321812c22ad7139fe93995a4ab816f331d23ab15579dedbc1027f1ca 0B / 158B 0.2s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 0B / 52.16MB 0.2s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 0B / 17.00MB 0.2s
+#7 sha256:3f199c35f5162fea3c8f07eef1e388cab02e2e3f619c9b2842b8bcd77a768e1e 2.28kB / 2.28kB 0.4s done
+#7 sha256:80e0252f321812c22ad7139fe93995a4ab816f331d23ab15579dedbc1027f1ca 158B / 158B 0.6s done
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 0B / 28.87MB 0.2s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 1.05MB / 17.00MB 1.7s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 2.10MB / 17.00MB 2.6s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 3.15MB / 17.00MB 3.3s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 3.15MB / 52.16MB 3.5s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 2.10MB / 28.87MB 3.6s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 4.19MB / 17.00MB 4.1s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 5.24MB / 17.00MB 5.0s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 6.29MB / 17.00MB 5.6s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 6.29MB / 52.16MB 6.2s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 7.34MB / 17.00MB 6.3s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 4.19MB / 28.87MB 6.6s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 8.39MB / 17.00MB 7.1s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 9.44MB / 17.00MB 7.7s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 10.49MB / 17.00MB 8.4s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 11.53MB / 17.00MB 9.0s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 9.44MB / 52.16MB 9.6s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 12.58MB / 17.00MB 9.6s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 6.29MB / 28.87MB 9.6s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 13.63MB / 17.00MB 10.4s
+#7 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:ccf3f1887707d46e0676214ea25476d1f6021973316ae88a5ae7a29680a2ba8d 59.52kB / 59.52kB 0.5s done
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 6.29MB / 137.39MB 9.2s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 14.68MB / 17.00MB 11.0s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 15.73MB / 17.00MB 11.7s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 17.00MB / 17.00MB 12.6s
+#7 sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 17.00MB / 17.00MB 13.5s done
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 8.39MB / 28.87MB 13.4s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 12.58MB / 52.16MB 14.1s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 10.49MB / 28.87MB 16.8s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 15.73MB / 52.16MB 18.6s
+#7 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 12.58MB / 137.39MB 19.4s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 8.39MB / 63.10MB 7.1s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 12.58MB / 28.87MB 20.9s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 18.87MB / 52.16MB 23.4s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 14.68MB / 28.87MB 24.0s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 22.02MB / 52.16MB 27.3s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 16.78MB / 28.87MB 27.0s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 18.87MB / 28.87MB 30.2s
+#7 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 18.87MB / 137.39MB 29.4s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 18.87MB / 63.10MB 17.1s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 25.17MB / 52.16MB 31.2s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 20.97MB / 28.87MB 33.3s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 28.31MB / 52.16MB 34.4s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 23.07MB / 28.87MB 36.6s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 31.46MB / 52.16MB 38.4s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 25.17MB / 28.87MB 39.6s
+#7 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 29.36MB / 137.39MB 39.5s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 30.41MB / 63.10MB 27.2s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 34.60MB / 52.16MB 42.5s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 27.26MB / 28.87MB 42.3s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 28.87MB / 28.87MB 44.6s
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 37.75MB / 52.16MB 46.1s
+#7 sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 28.87MB / 28.87MB 45.8s done
+#7 extracting sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5
+#7 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 36.70MB / 137.39MB 47.3s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 42.39MB / 63.10MB 36.0s
+#6 sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B 1.3s done
+#6 sha256:753ac5b2670bd2d8ce2ca35c8f886ce7d2557665b48321ffad09ae9669f9b09a 1.28kB / 1.28kB 1.7s
+#6 sha256:753ac5b2670bd2d8ce2ca35c8f886ce7d2557665b48321ffad09ae9669f9b09a 1.28kB / 1.28kB 1.8s done
+#6 sha256:2d6ceb247738b23fbed80439fa7e1cf66042b6767e2c0e0f2057a251f8e1c404 0B / 2.28kB 0.2s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 46.14MB / 63.10MB 36.9s
+#6 sha256:2d6ceb247738b23fbed80439fa7e1cf66042b6767e2c0e0f2057a251f8e1c404 2.28kB / 2.28kB 0.6s
+#6 sha256:2d6ceb247738b23fbed80439fa7e1cf66042b6767e2c0e0f2057a251f8e1c404 2.28kB / 2.28kB 0.7s done
+#6 sha256:270f33f32bad8041e2f3bccef67345ec2c76c01a1d45b76d51a19cb2d52d14b6 0B / 159B 0.2s
+#6 sha256:270f33f32bad8041e2f3bccef67345ec2c76c01a1d45b76d51a19cb2d52d14b6 159B / 159B 0.9s done
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 0B / 156.14MB 0.2s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 50.33MB / 63.10MB 39.6s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 40.89MB / 137.39MB 52.4s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 54.53MB / 63.10MB 43.2s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 3.15MB / 156.14MB 5.3s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 45.09MB / 137.39MB 57.5s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 49.28MB / 52.16MB 59.6s
+#7 extracting sha256:76fd055477b6edf8004a5a962edad02a820d4c8b2f02682410edfbe376b418c5 9.0s done
+#7 extracting sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5
+#7 extracting sha256:bfc1fe49c2f79e04d9e562ce4ee017e874bf7e23feea81b6df6f351ab993d9b5 3.4s done
+#7 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 58.72MB / 63.10MB 46.2s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 6.29MB / 156.14MB 10.4s
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 62.91MB / 63.10MB 48.6s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 52.16MB / 52.16MB 63.4s done
+#7 DONE 64.7s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 63.10MB / 63.10MB 49.9s done
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 0B / 24.17MB 0.2s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 51.38MB / 137.39MB 62.6s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 2.10MB / 24.17MB 2.0s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 4.19MB / 24.17MB 3.5s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 13.63MB / 156.14MB 15.5s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 6.29MB / 24.17MB 4.7s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 58.72MB / 137.39MB 67.7s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 extracting sha256:538e758f95d8493adbf608ecfa760b05bb49d3ceee0f1e637ca69598f3434ea6 5.7s done
+#7 DONE 70.4s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 8.39MB / 24.17MB 5.9s
+#6 ...
+
+#7 [stage-1 1/6] FROM docker.io/library/eclipse-temurin:21-jre@sha256:67f35487ed2661ef1a9abe9e1463176946610327c6610d40bfa71dde6f5d7cec
+#7 extracting sha256:80e0252f321812c22ad7139fe93995a4ab816f331d23ab15579dedbc1027f1ca 0.3s done
+#7 extracting sha256:3f199c35f5162fea3c8f07eef1e388cab02e2e3f619c9b2842b8bcd77a768e1e 0.9s done
+#7 DONE 71.6s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 10.49MB / 24.17MB 7.1s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 12.58MB / 24.17MB 8.1s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 20.97MB / 156.14MB 20.6s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 14.68MB / 24.17MB 9.3s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 16.78MB / 24.17MB 10.2s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 62.91MB / 137.39MB 72.8s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 18.87MB / 24.17MB 11.3s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 20.97MB / 24.17MB 12.6s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 25.17MB / 156.14MB 25.7s
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 23.07MB / 24.17MB 14.3s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 67.11MB / 137.39MB 77.9s
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 1.628 Get:1 http://ports.ubuntu.com/ubuntu-ports noble InRelease [256 kB]
+#8 3.193 Get:2 http://ports.ubuntu.com/ubuntu-ports noble-updates InRelease [126 kB]
+#8 3.405 Get:3 http://ports.ubuntu.com/ubuntu-ports noble-backports InRelease [126 kB]
+#8 3.685 Get:4 http://ports.ubuntu.com/ubuntu-ports noble-security InRelease [126 kB]
+#8 3.907 Get:5 http://ports.ubuntu.com/ubuntu-ports noble/universe arm64 Packages [19.0 MB]
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 24.17MB / 24.17MB 18.4s done
+#6 extracting sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 31.46MB / 156.14MB 30.8s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 73.40MB / 137.39MB 83.0s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 37.75MB / 156.14MB 35.9s
+#6 extracting sha256:21c7d1b1c79c5ecc5fccf686d3358ce1ce67645041767f3b414cf69acfa63f91 6.9s done
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 77.59MB / 137.39MB 88.1s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 40.89MB / 156.14MB 41.0s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 79.69MB / 137.39MB 93.2s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 44.04MB / 156.14MB 46.1s
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 17.17 Get:6 http://ports.ubuntu.com/ubuntu-ports noble/multiverse arm64 Packages [274 kB]
+#8 17.18 Get:7 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 Packages [1,776 kB]
+#8 18.68 Get:8 http://ports.ubuntu.com/ubuntu-ports noble/restricted arm64 Packages [113 kB]
+#8 18.69 Get:9 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 Packages [2,519 kB]
+#8 19.51 Get:10 http://ports.ubuntu.com/ubuntu-ports noble-updates/universe arm64 Packages [2,124 kB]
+#8 20.93 Get:11 http://ports.ubuntu.com/ubuntu-ports noble-updates/multiverse arm64 Packages [47.6 kB]
+#8 20.95 Get:12 http://ports.ubuntu.com/ubuntu-ports noble-updates/restricted arm64 Packages [5,240 kB]
+#8 23.78 Get:13 http://ports.ubuntu.com/ubuntu-ports noble-backports/multiverse arm64 Packages [695 B]
+#8 23.80 Get:14 http://ports.ubuntu.com/ubuntu-ports noble-backports/universe arm64 Packages [36.1 kB]
+#8 23.81 Get:15 http://ports.ubuntu.com/ubuntu-ports noble-backports/main arm64 Packages [49.5 kB]
+#8 23.81 Get:16 http://ports.ubuntu.com/ubuntu-ports noble-security/universe arm64 Packages [1,509 kB]
+#8 24.09 Get:17 http://ports.ubuntu.com/ubuntu-ports noble-security/restricted arm64 Packages [4,990 kB]
+#8 26.68 Get:18 http://ports.ubuntu.com/ubuntu-ports noble-security/main arm64 Packages [2,144 kB]
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 84.93MB / 137.39MB 98.3s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 92.23MB / 137.39MB 101.4s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 52.43MB / 156.14MB 51.2s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 99.61MB / 137.39MB 104.9s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 60.82MB / 156.14MB 56.4s
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 28.50 Get:19 http://ports.ubuntu.com/ubuntu-ports noble-security/multiverse arm64 Packages [44.1 kB]
+#8 28.86 Fetched 40.5 MB in 28s (1,472 kB/s)
+#8 28.86 Reading package lists...
+#8 33.64 Reading package lists...
+#8 37.52 Building dependency tree...
+#8 38.18 Reading state information...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 106.95MB / 137.39MB 108.0s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 114.29MB / 137.39MB 111.0s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 68.16MB / 156.14MB 61.5s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 121.63MB / 137.39MB 114.2s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 76.55MB / 156.14MB 66.6s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 128.97MB / 137.39MB 118.4s
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 39.60 curl is already the newest version (8.5.0-2ubuntu10.8).
+#8 39.60 The following additional packages will be installed:
+#8 39.60   dbus dbus-bin dbus-daemon dbus-session-bus-common dbus-system-bus-common
+#8 39.60   ibverbs-providers libapparmor1 libatm1t64 libbpf1 libcap2-bin libdbus-1-3
+#8 39.60   libelf1t64 libgpm2 libibverbs1 libjq1 libmnl0 libnl-3-200 libnl-route-3-200
+#8 39.60   libonig5 libpam-cap libpcap0.8t64 libpython3.12-minimal libpython3.12-stdlib
+#8 39.61   libpython3.12t64 libsodium23 libxtables12 media-types netbase vim-common
+#8 39.61   vim-runtime xxd
+#8 39.62 Suggested packages:
+#8 39.62   default-dbus-session-bus | dbus-session-bus iproute2-doc python3:any gpm
+#8 39.62   apparmor ctags vim-doc vim-scripts
+#8 41.57 The following NEW packages will be installed:
+#8 41.58   dbus dbus-bin dbus-daemon dbus-session-bus-common dbus-system-bus-common
+#8 41.58   ibverbs-providers iproute2 jq libapparmor1 libatm1t64 libbpf1 libcap2-bin
+#8 41.58   libdbus-1-3 libelf1t64 libgpm2 libibverbs1 libjq1 libmnl0 libnl-3-200
+#8 41.58   libnl-route-3-200 libonig5 libpam-cap libpcap0.8t64 libpython3.12-minimal
+#8 41.58   libpython3.12-stdlib libpython3.12t64 libsodium23 libxtables12 media-types
+#8 41.59   netbase tcpdump vim vim-common vim-runtime xxd
+#8 41.85 0 upgraded, 35 newly installed, 0 to remove and 4 not upgraded.
+#8 41.85 Need to get 18.6 MB of archives.
+#8 41.85 After this operation, 82.5 MB of additional disk space will be used.
+#8 41.85 Get:1 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libdbus-1-3 arm64 1.14.10-4ubuntu4.1 [210 kB]
+#8 42.66 Get:2 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 dbus-bin arm64 1.14.10-4ubuntu4.1 [38.8 kB]
+#8 42.70 Get:3 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 dbus-session-bus-common all 1.14.10-4ubuntu4.1 [80.5 kB]
+#8 42.81 Get:4 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libapparmor1 arm64 4.0.1really4.0.1-0ubuntu0.24.04.6 [51.6 kB]
+#8 42.88 Get:5 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 dbus-daemon arm64 1.14.10-4ubuntu4.1 [115 kB]
+#8 44.07 Get:6 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 dbus-system-bus-common all 1.14.10-4ubuntu4.1 [81.6 kB]
+#8 44.09 Get:7 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 dbus arm64 1.14.10-4ubuntu4.1 [23.9 kB]
+#8 44.10 Get:8 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libelf1t64 arm64 0.190-1.1ubuntu0.1 [58.4 kB]
+#8 44.11 Get:9 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libbpf1 arm64 1:1.3.0-2build2 [168 kB]
+#8 44.14 Get:10 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libmnl0 arm64 1.0.5-2build1 [12.4 kB]
+#8 44.15 Get:11 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libxtables12 arm64 1.8.10-3ubuntu2 [35.9 kB]
+#8 44.16 Get:12 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libcap2-bin arm64 1:2.66-5ubuntu2.2 [33.5 kB]
+#8 44.16 Get:13 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 iproute2 arm64 6.1.0-1ubuntu6.2 [1,124 kB]
+#8 45.49 Get:14 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libatm1t64 arm64 1:2.5.1-5.1build1 [23.5 kB]
+#8 45.49 Get:15 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpam-cap arm64 1:2.66-5ubuntu2.2 [12.5 kB]
+#8 45.51 Get:16 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpython3.12-minimal arm64 3.12.3-1ubuntu0.12 [834 kB]
+#8 46.36 Get:17 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 media-types all 10.1.0 [27.5 kB]
+#8 46.37 Get:18 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 netbase all 6.4 [13.1 kB]
+#8 46.38 Get:19 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpython3.12-stdlib arm64 3.12.3-1ubuntu0.12 [2,037 kB]
+#8 48.42 Get:20 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim-common all 2:9.1.0016-1ubuntu7.11 [387 kB]
+#8 48.58 Get:21 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 xxd arm64 2:9.1.0016-1ubuntu7.11 [64.6 kB]
+#8 48.59 Get:22 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libnl-3-200 arm64 3.7.0-0.3build1.1 [57.5 kB]
+#8 48.62 Get:23 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libnl-route-3-200 arm64 3.7.0-0.3build1.1 [182 kB]
+#8 48.84 Get:24 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libibverbs1 arm64 50.0-2ubuntu0.2 [67.5 kB]
+#8 48.85 Get:25 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 ibverbs-providers arm64 50.0-2ubuntu0.2 [375 kB]
+#8 49.19 Get:26 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libgpm2 arm64 1.20.7-11 [14.7 kB]
+#8 49.19 Get:27 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libpcap0.8t64 arm64 1.10.4-4.1ubuntu3 [149 kB]
+#8 49.28 Get:28 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 tcpdump arm64 4.99.4-3ubuntu4.24.04.1 [473 kB]
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 83.89MB / 156.14MB 71.7s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 136.31MB / 137.39MB 122.7s
+#6 sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 137.39MB / 137.39MB 125.8s done
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 92.27MB / 156.14MB 75.9s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 100.66MB / 156.14MB 78.0s
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 50.07 Get:29 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libonig5 arm64 6.9.9-1build1 [172 kB]
+#8 51.35 Get:30 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libjq1 arm64 1.7.1-3ubuntu0.24.04.1 [134 kB]
+#8 51.37 Get:31 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 jq arm64 1.7.1-3ubuntu0.24.04.1 [64.7 kB]
+#8 51.39 Get:32 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpython3.12t64 arm64 3.12.3-1ubuntu0.12 [2,282 kB]
+#8 52.58 Get:33 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libsodium23 arm64 1.0.18-1ubuntu0.24.04.1 [119 kB]
+#8 52.60 Get:34 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim-runtime all 2:9.1.0016-1ubuntu7.11 [7,282 kB]
+#8 58.72 Get:35 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim arm64 2:9.1.0016-1ubuntu7.11 [1,814 kB]
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 109.05MB / 156.14MB 80.0s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 117.44MB / 156.14MB 81.9s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 125.59MB / 156.14MB 83.7s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 134.22MB / 156.14MB 85.7s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 142.61MB / 156.14MB 87.6s
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 60.91 debconf: delaying package configuration, since apt-utils is not installed
+#8 62.35 Fetched 18.6 MB in 17s (1,072 kB/s)
+#8 62.92 Selecting previously unselected package libdbus-1-3:arm64.
+#8 62.92 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6587 files and directories currently installed.)
+#8 62.96 Preparing to unpack .../00-libdbus-1-3_1.14.10-4ubuntu4.1_arm64.deb ...
+#8 63.27 Unpacking libdbus-1-3:arm64 (1.14.10-4ubuntu4.1) ...
+#8 65.55 Selecting previously unselected package dbus-bin.
+#8 65.55 Preparing to unpack .../01-dbus-bin_1.14.10-4ubuntu4.1_arm64.deb ...
+#8 65.56 Unpacking dbus-bin (1.14.10-4ubuntu4.1) ...
+#8 67.15 Selecting previously unselected package dbus-session-bus-common.
+#8 67.16 Preparing to unpack .../02-dbus-session-bus-common_1.14.10-4ubuntu4.1_all.deb ...
+#8 67.23 Unpacking dbus-session-bus-common (1.14.10-4ubuntu4.1) ...
+#8 68.84 Selecting previously unselected package libapparmor1:arm64.
+#8 68.85 Preparing to unpack .../03-libapparmor1_4.0.1really4.0.1-0ubuntu0.24.04.6_arm64.deb ...
+#8 68.94 Unpacking libapparmor1:arm64 (4.0.1really4.0.1-0ubuntu0.24.04.6) ...
+#8 69.96 Selecting previously unselected package dbus-daemon.
+#8 69.97 Preparing to unpack .../04-dbus-daemon_1.14.10-4ubuntu4.1_arm64.deb ...
+#8 70.58 Unpacking dbus-daemon (1.14.10-4ubuntu4.1) ...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 150.99MB / 156.14MB 89.9s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 156.14MB / 156.14MB 95.0s
+#6 sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 156.14MB / 156.14MB 97.0s done
+#6 extracting sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 72.20 Selecting previously unselected package dbus-system-bus-common.
+#8 72.21 Preparing to unpack .../05-dbus-system-bus-common_1.14.10-4ubuntu4.1_all.deb ...
+#8 72.22 Unpacking dbus-system-bus-common (1.14.10-4ubuntu4.1) ...
+#8 78.19 Selecting previously unselected package dbus.
+#8 78.19 Preparing to unpack .../06-dbus_1.14.10-4ubuntu4.1_arm64.deb ...
+#8 78.24 Unpacking dbus (1.14.10-4ubuntu4.1) ...
+#8 78.75 Selecting previously unselected package libelf1t64:arm64.
+#8 78.75 Preparing to unpack .../07-libelf1t64_0.190-1.1ubuntu0.1_arm64.deb ...
+#8 78.76 Unpacking libelf1t64:arm64 (0.190-1.1ubuntu0.1) ...
+#8 80.36 Selecting previously unselected package libbpf1:arm64.
+#8 80.37 Preparing to unpack .../08-libbpf1_1%3a1.3.0-2build2_arm64.deb ...
+#8 80.70 Unpacking libbpf1:arm64 (1:1.3.0-2build2) ...
+#8 81.94 Selecting previously unselected package libmnl0:arm64.
+#8 81.94 Preparing to unpack .../09-libmnl0_1.0.5-2build1_arm64.deb ...
+#8 82.29 Unpacking libmnl0:arm64 (1.0.5-2build1) ...
+#8 83.56 Selecting previously unselected package libxtables12:arm64.
+#8 83.57 Preparing to unpack .../10-libxtables12_1.8.10-3ubuntu2_arm64.deb ...
+#8 83.92 Unpacking libxtables12:arm64 (1.8.10-3ubuntu2) ...
+#8 85.18 Selecting previously unselected package libcap2-bin.
+#8 85.18 Preparing to unpack .../11-libcap2-bin_1%3a2.66-5ubuntu2.2_arm64.deb ...
+#8 85.52 Unpacking libcap2-bin (1:2.66-5ubuntu2.2) ...
+#8 87.16 Selecting previously unselected package iproute2.
+#8 87.17 Preparing to unpack .../12-iproute2_6.1.0-1ubuntu6.2_arm64.deb ...
+#8 87.18 Unpacking iproute2 (6.1.0-1ubuntu6.2) ...
+#8 88.88 Selecting previously unselected package libatm1t64:arm64.
+#8 88.89 Preparing to unpack .../13-libatm1t64_1%3a2.5.1-5.1build1_arm64.deb ...
+#8 89.22 Unpacking libatm1t64:arm64 (1:2.5.1-5.1build1) ...
+#8 90.44 Selecting previously unselected package libpam-cap:arm64.
+#8 90.45 Preparing to unpack .../14-libpam-cap_1%3a2.66-5ubuntu2.2_arm64.deb ...
+#8 90.46 Unpacking libpam-cap:arm64 (1:2.66-5ubuntu2.2) ...
+#8 91.99 Selecting previously unselected package libpython3.12-minimal:arm64.
+#8 92.00 Preparing to unpack .../15-libpython3.12-minimal_3.12.3-1ubuntu0.12_arm64.deb ...
+#8 92.02 Unpacking libpython3.12-minimal:arm64 (3.12.3-1ubuntu0.12) ...
+#8 94.16 Selecting previously unselected package media-types.
+#8 94.17 Preparing to unpack .../16-media-types_10.1.0_all.deb ...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:80ff0baa3d4d98b333e10ac5a29849712241a6e7241a71aac16f5e3cbf06d88a 15.8s done
+#6 extracting sha256:270f33f32bad8041e2f3bccef67345ec2c76c01a1d45b76d51a19cb2d52d14b6
+#6 extracting sha256:270f33f32bad8041e2f3bccef67345ec2c76c01a1d45b76d51a19cb2d52d14b6 1.0s done
+#6 extracting sha256:2d6ceb247738b23fbed80439fa7e1cf66042b6767e2c0e0f2057a251f8e1c404
+#6 extracting sha256:2d6ceb247738b23fbed80439fa7e1cf66042b6767e2c0e0f2057a251f8e1c404 1.5s done
+#6 DONE 168.4s
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 94.46 Unpacking media-types (10.1.0) ...
+#8 95.20 Selecting previously unselected package netbase.
+#8 95.20 Preparing to unpack .../17-netbase_6.4_all.deb ...
+#8 95.27 Unpacking netbase (6.4) ...
+#8 97.01 Selecting previously unselected package libpython3.12-stdlib:arm64.
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:753ac5b2670bd2d8ce2ca35c8f886ce7d2557665b48321ffad09ae9669f9b09a 0.4s done
+#6 DONE 168.8s
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 97.02 Preparing to unpack .../18-libpython3.12-stdlib_3.12.3-1ubuntu0.12_arm64.deb ...
+#8 97.10 Unpacking libpython3.12-stdlib:arm64 (3.12.3-1ubuntu0.12) ...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 1.6s done
+#6 DONE 170.4s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 99.07 Selecting previously unselected package vim-common.
+#8 99.08 Preparing to unpack .../19-vim-common_2%3a9.1.0016-1ubuntu7.11_all.deb ...
+#8 99.40 Unpacking vim-common (2:9.1.0016-1ubuntu7.11) ...
+#8 103.3 Selecting previously unselected package xxd.
+#8 103.3 Preparing to unpack .../20-xxd_2%3a9.1.0016-1ubuntu7.11_arm64.deb ...
+#8 104.2 Unpacking xxd (2:9.1.0016-1ubuntu7.11) ...
+#8 105.7 Selecting previously unselected package libnl-3-200:arm64.
+#8 105.7 Preparing to unpack .../21-libnl-3-200_3.7.0-0.3build1.1_arm64.deb ...
+#8 105.9 Unpacking libnl-3-200:arm64 (3.7.0-0.3build1.1) ...
+#8 106.6 Selecting previously unselected package libnl-route-3-200:arm64.
+#8 106.7 Preparing to unpack .../22-libnl-route-3-200_3.7.0-0.3build1.1_arm64.deb ...
+#8 106.7 Unpacking libnl-route-3-200:arm64 (3.7.0-0.3build1.1) ...
+#8 107.8 Selecting previously unselected package libibverbs1:arm64.
+#8 107.8 Preparing to unpack .../23-libibverbs1_50.0-2ubuntu0.2_arm64.deb ...
+#8 107.9 Unpacking libibverbs1:arm64 (50.0-2ubuntu0.2) ...
+#8 109.7 Selecting previously unselected package ibverbs-providers:arm64.
+#8 109.7 Preparing to unpack .../24-ibverbs-providers_50.0-2ubuntu0.2_arm64.deb ...
+#8 109.8 Unpacking ibverbs-providers:arm64 (50.0-2ubuntu0.2) ...
+#8 113.2 Selecting previously unselected package libgpm2:arm64.
+#8 113.2 Preparing to unpack .../25-libgpm2_1.20.7-11_arm64.deb ...
+#8 114.3 Unpacking libgpm2:arm64 (1.20.7-11) ...
+#8 115.0 Selecting previously unselected package libpcap0.8t64:arm64.
+#8 115.0 Preparing to unpack .../26-libpcap0.8t64_1.10.4-4.1ubuntu3_arm64.deb ...
+#8 115.0 Unpacking libpcap0.8t64:arm64 (1.10.4-4.1ubuntu3) ...
+#8 117.1 Selecting previously unselected package tcpdump.
+#8 117.1 Preparing to unpack .../27-tcpdump_4.99.4-3ubuntu4.24.04.1_arm64.deb ...
+#8 117.4 Unpacking tcpdump (4.99.4-3ubuntu4.24.04.1) ...
+#8 118.4 Selecting previously unselected package libonig5:arm64.
+#8 118.4 Preparing to unpack .../28-libonig5_6.9.9-1build1_arm64.deb ...
+#8 118.5 Unpacking libonig5:arm64 (6.9.9-1build1) ...
+#8 119.3 Selecting previously unselected package libjq1:arm64.
+#8 119.3 Preparing to unpack .../29-libjq1_1.7.1-3ubuntu0.24.04.1_arm64.deb ...
+#8 119.4 Unpacking libjq1:arm64 (1.7.1-3ubuntu0.24.04.1) ...
+#8 121.1 Selecting previously unselected package jq.
+#8 121.1 Preparing to unpack .../30-jq_1.7.1-3ubuntu0.24.04.1_arm64.deb ...
+#8 121.1 Unpacking jq (1.7.1-3ubuntu0.24.04.1) ...
+#8 123.0 Selecting previously unselected package libpython3.12t64:arm64.
+#8 123.0 Preparing to unpack .../31-libpython3.12t64_3.12.3-1ubuntu0.12_arm64.deb ...
+#8 123.1 Unpacking libpython3.12t64:arm64 (3.12.3-1ubuntu0.12) ...
+#8 125.5 Selecting previously unselected package libsodium23:arm64.
+#8 125.5 Preparing to unpack .../32-libsodium23_1.0.18-1ubuntu0.24.04.1_arm64.deb ...
+#8 125.7 Unpacking libsodium23:arm64 (1.0.18-1ubuntu0.24.04.1) ...
+#8 127.5 Selecting previously unselected package vim-runtime.
+#8 127.5 Preparing to unpack .../33-vim-runtime_2%3a9.1.0016-1ubuntu7.11_all.deb ...
+#8 127.6 Adding 'diversion of /usr/share/vim/vim91/doc/help.txt to /usr/share/vim/vim91/doc/help.txt.vim-tiny by vim-runtime'
+#8 128.1 Adding 'diversion of /usr/share/vim/vim91/doc/tags to /usr/share/vim/vim91/doc/tags.vim-tiny by vim-runtime'
+#8 128.5 Unpacking vim-runtime (2:9.1.0016-1ubuntu7.11) ...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:6a146a76eecbeacb3bb201517f3a4e6cedf3a3beebed010140c67858f1f87017 31.0s done
+#6 DONE 201.5s
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65
+#6 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 132.6 Selecting previously unselected package vim.
+#8 132.7 Preparing to unpack .../34-vim_2%3a9.1.0016-1ubuntu7.11_arm64.deb ...
+#8 133.0 Unpacking vim (2:9.1.0016-1ubuntu7.11) ...
+#8 134.1 Setting up media-types (10.1.0) ...
+#8 135.2 Setting up libapparmor1:arm64 (4.0.1really4.0.1-0ubuntu0.24.04.6) ...
+#8 136.0 Setting up libsodium23:arm64 (1.0.18-1ubuntu0.24.04.1) ...
+#8 136.1 Setting up libgpm2:arm64 (1.20.7-11) ...
+#8 136.3 Setting up libatm1t64:arm64 (1:2.5.1-5.1build1) ...
+#8 136.4 Setting up libpython3.12-minimal:arm64 (3.12.3-1ubuntu0.12) ...
+#8 136.9 Setting up xxd (2:9.1.0016-1ubuntu7.11) ...
+#8 137.2 Setting up libelf1t64:arm64 (0.190-1.1ubuntu0.1) ...
+#8 137.6 Setting up libcap2-bin (1:2.66-5ubuntu2.2) ...
+#8 138.0 Setting up vim-common (2:9.1.0016-1ubuntu7.11) ...
+#8 138.9 Setting up libdbus-1-3:arm64 (1.14.10-4ubuntu4.1) ...
+#8 139.2 Setting up libmnl0:arm64 (1.0.5-2build1) ...
+#8 139.7 Setting up libxtables12:arm64 (1.8.10-3ubuntu2) ...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:4300fa3c6fbf613ecdc409d7bcb352be3e14b17a18b1ccfb62f6bf401d446b65 10.1s done
+#6 DONE 211.6s
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 140.1 Setting up dbus-session-bus-common (1.14.10-4ubuntu4.1) ...
+#8 140.5 Setting up libnl-3-200:arm64 (3.7.0-0.3build1.1) ...
+#8 ...
+
+#6 [builder 1/4] FROM docker.io/library/gradle:8-jdk21@sha256:98a996e26f6661907b6d713835417b9ee04dcf8050eccca2fda62214ad24b928
+#6 extracting sha256:ccf3f1887707d46e0676214ea25476d1f6021973316ae88a5ae7a29680a2ba8d 0.7s done
+#6 DONE 212.3s
+
+#9 [builder 2/4] WORKDIR /build
+#9 ...
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 141.2 Setting up netbase (6.4) ...
+#8 142.0 Setting up vim-runtime (2:9.1.0016-1ubuntu7.11) ...
+#8 142.4 Setting up dbus-system-bus-common (1.14.10-4ubuntu4.1) ...
+#8 147.9 Setting up libpam-cap:arm64 (1:2.66-5ubuntu2.2) ...
+#8 148.7 debconf: unable to initialize frontend: Dialog
+#8 148.7 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#8 148.7 debconf: falling back to frontend: Readline
+#8 148.7 debconf: unable to initialize frontend: Readline
+#8 148.7 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/aarch64-linux-gnu/perl/5.38.2 /usr/local/share/perl/5.38.2 /usr/lib/aarch64-linux-gnu/perl5/5.38 /usr/share/perl5 /usr/lib/aarch64-linux-gnu/perl-base /usr/lib/aarch64-linux-gnu/perl/5.38 /usr/share/perl/5.38 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8.)
+#8 148.7 debconf: falling back to frontend: Teletype
+#8 149.6 Setting up dbus-bin (1.14.10-4ubuntu4.1) ...
+#8 150.0 Setting up libonig5:arm64 (6.9.9-1build1) ...
+#8 150.2 Setting up libbpf1:arm64 (1:1.3.0-2build2) ...
+#8 150.8 Setting up libpython3.12-stdlib:arm64 (3.12.3-1ubuntu0.12) ...
+#8 151.0 Setting up libjq1:arm64 (1.7.1-3ubuntu0.24.04.1) ...
+#8 151.2 Setting up iproute2 (6.1.0-1ubuntu6.2) ...
+#8 152.8 debconf: unable to initialize frontend: Dialog
+#8 152.8 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#8 152.8 debconf: falling back to frontend: Readline
+#8 152.8 debconf: unable to initialize frontend: Readline
+#8 152.8 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/aarch64-linux-gnu/perl/5.38.2 /usr/local/share/perl/5.38.2 /usr/lib/aarch64-linux-gnu/perl5/5.38 /usr/share/perl5 /usr/lib/aarch64-linux-gnu/perl-base /usr/lib/aarch64-linux-gnu/perl/5.38 /usr/share/perl/5.38 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8.)
+#8 152.8 debconf: falling back to frontend: Teletype
+#8 153.3 Setting up dbus-daemon (1.14.10-4ubuntu4.1) ...
+#8 153.6 Setting up libnl-route-3-200:arm64 (3.7.0-0.3build1.1) ...
+#8 153.9 Setting up libpython3.12t64:arm64 (3.12.3-1ubuntu0.12) ...
+#8 154.2 Setting up dbus (1.14.10-4ubuntu4.1) ...
+#8 155.1 Setting up jq (1.7.1-3ubuntu0.24.04.1) ...
+#8 155.6 Setting up libibverbs1:arm64 (50.0-2ubuntu0.2) ...
+#8 156.4 Setting up vim (2:9.1.0016-1ubuntu7.11) ...
+#8 156.6 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/man1/editor.1.gz because associated file /usr/share/man/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/da/man1/editor.1.gz because associated file /usr/share/man/da/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/de/man1/editor.1.gz because associated file /usr/share/man/de/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/fr/man1/editor.1.gz because associated file /usr/share/man/fr/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/it/man1/editor.1.gz because associated file /usr/share/man/it/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/ja/man1/editor.1.gz because associated file /usr/share/man/ja/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/pl/man1/editor.1.gz because associated file /usr/share/man/pl/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/ru/man1/editor.1.gz because associated file /usr/share/man/ru/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.6 update-alternatives: warning: skip creation of /usr/share/man/tr/man1/editor.1.gz because associated file /usr/share/man/tr/man1/vim.1.gz (of link group editor) doesn't exist
+#8 156.7 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/man1/ex.1.gz because associated file /usr/share/man/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/da/man1/ex.1.gz because associated file /usr/share/man/da/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/de/man1/ex.1.gz because associated file /usr/share/man/de/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/fr/man1/ex.1.gz because associated file /usr/share/man/fr/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/it/man1/ex.1.gz because associated file /usr/share/man/it/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/ja/man1/ex.1.gz because associated file /usr/share/man/ja/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/pl/man1/ex.1.gz because associated file /usr/share/man/pl/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/ru/man1/ex.1.gz because associated file /usr/share/man/ru/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.7 update-alternatives: warning: skip creation of /usr/share/man/tr/man1/ex.1.gz because associated file /usr/share/man/tr/man1/vim.1.gz (of link group ex) doesn't exist
+#8 156.8 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+#8 156.9 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+#8 156.9 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/man1/vi.1.gz because associated file /usr/share/man/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/da/man1/vi.1.gz because associated file /usr/share/man/da/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/de/man1/vi.1.gz because associated file /usr/share/man/de/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/fr/man1/vi.1.gz because associated file /usr/share/man/fr/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/it/man1/vi.1.gz because associated file /usr/share/man/it/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/ja/man1/vi.1.gz because associated file /usr/share/man/ja/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/pl/man1/vi.1.gz because associated file /usr/share/man/pl/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/ru/man1/vi.1.gz because associated file /usr/share/man/ru/man1/vim.1.gz (of link group vi) doesn't exist
+#8 156.9 update-alternatives: warning: skip creation of /usr/share/man/tr/man1/vi.1.gz because associated file /usr/share/man/tr/man1/vim.1.gz (of link group vi) doesn't exist
+#8 157.0 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/man1/view.1.gz because associated file /usr/share/man/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/da/man1/view.1.gz because associated file /usr/share/man/da/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/de/man1/view.1.gz because associated file /usr/share/man/de/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/fr/man1/view.1.gz because associated file /usr/share/man/fr/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/it/man1/view.1.gz because associated file /usr/share/man/it/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/ja/man1/view.1.gz because associated file /usr/share/man/ja/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/pl/man1/view.1.gz because associated file /usr/share/man/pl/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/ru/man1/view.1.gz because associated file /usr/share/man/ru/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.0 update-alternatives: warning: skip creation of /usr/share/man/tr/man1/view.1.gz because associated file /usr/share/man/tr/man1/vim.1.gz (of link group view) doesn't exist
+#8 157.1 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+#8 157.1 update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+#8 157.2 Setting up ibverbs-providers:arm64 (50.0-2ubuntu0.2) ...
+#8 159.1 Setting up libpcap0.8t64:arm64 (1.10.4-4.1ubuntu3) ...
+#8 159.4 Setting up tcpdump (4.99.4-3ubuntu4.24.04.1) ...
+#8 161.5 Processing triggers for libc-bin (2.39-0ubuntu8.7) ...
+#8 ...
+
+#9 [builder 2/4] WORKDIR /build
+#9 DONE 49.1s
+
+#8 [stage-1 2/6] RUN apt-get -y update && apt-get -y install tcpdump vim iproute2 jq curl
+#8 DONE 189.8s
+
+#10 [stage-1 3/6] WORKDIR /app
+#10 ...
+
+#11 [builder 3/4] COPY . .
+#11 ...
+
+#10 [stage-1 3/6] WORKDIR /app
+#10 DONE 10.3s
+
+#11 [builder 3/4] COPY . .
+#11 DONE 10.3s
+
+#12 [builder 4/4] RUN gradle build --no-daemon
+#12 ...
+
+#13 [stage-1 4/6] COPY --chmod=755 docker/ipcli.sh /app/ipcli.sh
+#13 DONE 0.5s
+
+#14 [stage-1 5/6] COPY --chmod=755 docker/entrypoint.sh /app/entrypoint.sh
+#14 DONE 1.8s
+
+#12 [builder 4/4] RUN gradle build --no-daemon
+#12 6.695 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.4/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+#12 13.39 Daemon will be stopped at the end of the build 
+#12 220.1 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+#12 250.1 > Task :compileKotlin
+#12 257.1 > Task :processResources
+#12 287.1 > Task :loadKtlintReporters
+#12 287.7 > Task :processTestResources NO-SOURCE
+#12 288.6 > Task :runKtlintCheckOverTestSourceSet NO-SOURCE
+#12 288.7 > Task :ktlintTestSourceSetCheck SKIPPED
+#12 309.9 > Task :runKtlintCheckOverKotlinScripts
+#12 310.7 > Task :ktlintKotlinScriptCheck
+#12 318.3 > Task :runKtlintCheckOverMainSourceSet
+#12 318.7 > Task :ktlintMainSourceSetCheck
+#12 342.3 > Task :compileJava NO-SOURCE
+#12 342.3 > Task :classes
+#12 342.7 > Task :jar
+#12 347.7 > Task :startScripts
+#12 348.7 > Task :distTar
+#12 351.6 > Task :distZip
+#12 374.9 > Task :shadowJar
+#12 377.0 > Task :startShadowScripts
+#12 377.9 > Task :shadowDistTar
+#12 380.5 > Task :shadowDistZip
+#12 380.5 > Task :assemble
+#12 380.5 > Task :compileTestKotlin NO-SOURCE
+#12 380.5 > Task :compileTestJava NO-SOURCE
+#12 380.5 > Task :testClasses UP-TO-DATE
+#12 380.5 > Task :test NO-SOURCE
+#12 380.5 > Task :check
+#12 380.5 > Task :build
+#12 380.9 
+#12 380.9 [Incubating] Problems report is available at: file:///build/build/reports/problems/problems-report.html
+#12 380.9 
+#12 380.9 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+#12 380.9 
+#12 380.9 You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+#12 380.9 
+#12 380.9 For more on this, please refer to https://docs.gradle.org/8.14.4/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+#12 380.9 
+#12 380.9 BUILD SUCCESSFUL in 6m 18s
+#12 380.9 15 actionable tasks: 15 executed
+#12 DONE 386.7s
+
+#15 [stage-1 6/6] COPY --from=builder /build/build/libs/ecu-sim-all.jar /app/ecu-sim-all.jar
+#15 DONE 3.8s
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 47.7s done
+#16 exporting manifest sha256:ec7afd26f7108f1dce3dc9993c261226bc99ac08d2799c32766808fe1bf14a20
+#16 exporting manifest sha256:ec7afd26f7108f1dce3dc9993c261226bc99ac08d2799c32766808fe1bf14a20 0.6s done
+#16 exporting config sha256:ab13b89f1f9afe2cdfca1b29da5da835027ca9c0408b298de45f6dc98fef1d61
+#16 exporting config sha256:ab13b89f1f9afe2cdfca1b29da5da835027ca9c0408b298de45f6dc98fef1d61 0.0s done
+#16 exporting attestation manifest sha256:0d868087db54d2a7131837dd420ada5e18b5fc207ef0fdfe33c68c058cfe0e88
+#16 exporting attestation manifest sha256:0d868087db54d2a7131837dd420ada5e18b5fc207ef0fdfe33c68c058cfe0e88 0.1s done
+#16 exporting manifest list sha256:441992795ea3d8371167307b258c6ea38137f5916c2d1e5fb35372eb0da0ef9d 0.1s done
+#16 naming to docker.io/taktflow/cda-ecu-sim:latest
+#16 naming to docker.io/taktflow/cda-ecu-sim:latest done
+#16 unpacking to docker.io/taktflow/cda-ecu-sim:latest
+#16 unpacking to docker.io/taktflow/cda-ecu-sim:latest 9.3s done
+#16 DONE 58.2s
+[3/4] Installing systemd unit
+Created symlink /etc/systemd/system/multi-user.target.wants/ecu-sim.service → /etc/systemd/system/ecu-sim.service.
+[4/4] Verification
+● ecu-sim.service - Taktflow CDA ECU Simulator (upstream Kotlin)
+     Loaded: loaded (/etc/systemd/system/ecu-sim.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-04-14 17:27:51 CEST; 1s ago
+    Process: 11148 ExecStartPre=/usr/bin/docker rm -f ecu-sim (code=exited, status=0/SUCCESS)
+   Main PID: 11162 (docker)
+      Tasks: 9 (limit: 3848)
+     Memory: 8.6M (peak: 9.2M)
+        CPU: 166ms
+     CGroup: /system.slice/ecu-sim.service
+             └─11162 /usr/bin/docker run --rm --name ecu-sim -p 13400:13400 taktflow/cda-ecu-sim:latest
+
+Apr 14 17:27:51 taktflow-pi systemd[1]: Starting ecu-sim.service - Taktflow CDA ECU Simulator (upstream Kotlin)...
+Apr 14 17:27:51 taktflow-pi docker[11148]: Error response from daemon: No such container: ecu-sim
+Apr 14 17:27:51 taktflow-pi systemd[1]: Started ecu-sim.service - Taktflow CDA ECU Simulator (upstream Kotlin).
+ecu-sim container not yet running
+
+done — ecu-sim should be listening on taktflow-pi@192.168.0.197:13400

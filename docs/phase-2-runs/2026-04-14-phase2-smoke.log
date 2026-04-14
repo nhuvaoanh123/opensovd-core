@@ -1,0 +1,26 @@
+warning: Patch `aide v0.16.0-alpha.1 (https://github.com/alexmohr/aide.git?rev=56355cb#56355cbe)` was not used in the crate graph.
+Patch `doip-codec v2.0.8 (https://github.com/theswiftfox/doip-codec.git?rev=0dba319#0dba3192)` was not used in the crate graph.
+Patch `doip-definitions v3.0.13 (https://github.com/theswiftfox/doip-definitions.git?rev=bdeab8c#bdeab8cb)` was not used in the crate graph.
+Patch `flatbuffers v25.9.23 (https://github.com/alexmohr/flatbuffers.git?rev=0ba3307d#0ba3307d)` was not used in the crate graph.
+Check that the patched package version and available features are compatible
+with the dependency requirements. If the patch has a different version from
+what is locked in the Cargo.lock file, run `cargo update` to use the new
+version. This may also occur with an optional dependency that is not enabled.
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+     Running tests\phase2_cda_ecusim_smoke.rs (target\debug\deps\phase2_cda_ecusim_smoke-1d0fd11b5e92576d.exe)
+
+running 1 test
+phase2 smoke: acquired Bearer token (145 bytes)
+phase2 smoke: discovered 2 components, probing "flxc1000"
+phase2 smoke: http://127.0.0.1:20002/vehicle/v15/components/flxc1000/operations -> 404 (absent from ecu-sim catalog; accepted)
+phase2 smoke: ecu-sim component "flxc1000" exposes no operations; skipping exec flow
+phase2 smoke: end-to-end SOVD -> CDA -> DoIP -> ecu-sim round-trip OK (auth, component discovery, and spec-typed DiscoveredEntities verified)
+test phase2_cda_ecusim_smoke ... ok
+
+successes:
+
+successes:
+    phase2_cda_ecusim_smoke
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
