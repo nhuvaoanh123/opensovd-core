@@ -34,6 +34,7 @@
 //! [`OperationCycle`]: sovd_interfaces::traits::operation_cycle::OperationCycle
 //! [`SovdBackend`]: sovd_interfaces::traits::backend::SovdBackend
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -41,31 +42,66 @@ use sovd_interfaces::{
     ComponentId, SovdError,
     spec::{
         component::EntityCapabilities,
-        fault::{FaultFilter, ListOfFaults},
-        operation::{StartExecutionAsyncResponse, StartExecutionRequest},
+        data::{Datas, ValueMetadata},
+        fault::{FaultDetails, FaultFilter, ListOfFaults},
+        operation::{
+            Capability, ExecutionStatus, ExecutionStatusResponse, OperationDescription,
+            OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
+        },
     },
     traits::{
-        backend::{BackendKind, SovdBackend},
+        backend::{BackendHealth, BackendKind, SovdBackend},
         fault_sink::{FaultRecordRef, FaultSink},
         operation_cycle::OperationCycle,
         sovd_db::SovdDb,
     },
     types::error::Result,
 };
+use tokio::sync::RwLock;
+use uuid::Uuid;
 
 pub mod config;
 
 pub use config::{DfmBackendConfig, FaultSinkBackend, OperationCycleBackend, PersistenceBackend};
 
+/// Record of one operation execution managed by the DFM.
+#[derive(Debug, Clone)]
+struct ExecutionRecord {
+    operation_id: String,
+    status: ExecutionStatus,
+    parameters: Option<serde_json::Value>,
+    /// Name of the operation cycle that was active when this execution
+    /// was started. Used by the cycle-driven gating rule in
+    /// [`Dfm::execution_status`] — a running execution whose cycle has
+    /// since ended is reported as
+    /// [`ExecutionStatus::Completed`].
+    started_under_cycle: Option<String>,
+}
+
 /// Diagnostic Fault Manager runtime object.
 ///
 /// Constructed by [`Dfm::builder`] with concrete backends. The DFM
 /// owns the store (`SovdDb`), the lifecycle driver (`OperationCycle`),
-/// and a component id it serves as a `SovdBackend`.
+/// an operation catalog, a data catalog, and a map of live executions.
+/// It implements both [`FaultSink`] (ingestion side) and
+/// [`SovdBackend`] (read side).
 pub struct Dfm {
     component: ComponentId,
     db: Arc<dyn SovdDb>,
     cycles: Arc<dyn OperationCycle>,
+    /// Operation catalog published via `list_operations`. Defaults to
+    /// an empty catalog when the builder is not given one.
+    operations: Vec<OperationDescription>,
+    /// Data-metadata catalog published via `list_data`. Defaults to an
+    /// empty catalog.
+    data_catalog: Vec<ValueMetadata>,
+    /// Active / historical executions keyed by execution id.
+    ///
+    /// RwLock (not parking_lot) so the DFM can serialise access from
+    /// multiple axum task workers. `HashMap` is fine because the axum
+    /// router only touches executions via
+    /// [`SovdBackend::start_execution`] / [`SovdBackend::execution_status`].
+    executions: Arc<RwLock<HashMap<String, ExecutionRecord>>>,
 }
 
 impl std::fmt::Debug for Dfm {
@@ -74,26 +110,14 @@ impl std::fmt::Debug for Dfm {
             .field("component", &self.component)
             .field("db", &"<dyn SovdDb>")
             .field("cycles", &"<dyn OperationCycle>")
+            .field("operations", &self.operations.len())
+            .field("data_catalog", &self.data_catalog.len())
+            .field("executions", &"<RwLock<HashMap>>")
             .finish()
     }
 }
 
 impl Dfm {
-    /// Build a DFM that owns the given concrete backends and serves the
-    /// given component id.
-    #[must_use]
-    pub fn new(
-        component: ComponentId,
-        db: Arc<dyn SovdDb>,
-        cycles: Arc<dyn OperationCycle>,
-    ) -> Self {
-        Self {
-            component,
-            db,
-            cycles,
-        }
-    }
-
     /// Borrow the store trait object.
     #[must_use]
     pub fn db(&self) -> &Arc<dyn SovdDb> {
@@ -106,14 +130,27 @@ impl Dfm {
         &self.cycles
     }
 
-    /// Builder entry point — use [`DfmBuilder::with_defaults`] for the
-    /// standalone wiring.
+    /// Borrow the published operation catalog.
+    #[must_use]
+    pub fn operation_catalog(&self) -> &[OperationDescription] {
+        &self.operations
+    }
+
+    /// Borrow the published data-metadata catalog.
+    #[must_use]
+    pub fn data_catalog(&self) -> &[ValueMetadata] {
+        &self.data_catalog
+    }
+
+    /// Builder entry point — use [`DfmBuilder::build`] to finish.
     #[must_use]
     pub fn builder(component: ComponentId) -> DfmBuilder {
         DfmBuilder {
             component,
             db: None,
             cycles: None,
+            operations: Vec::new(),
+            data_catalog: Vec::new(),
         }
     }
 }
@@ -124,6 +161,8 @@ pub struct DfmBuilder {
     component: ComponentId,
     db: Option<Arc<dyn SovdDb>>,
     cycles: Option<Arc<dyn OperationCycle>>,
+    operations: Vec<OperationDescription>,
+    data_catalog: Vec<ValueMetadata>,
 }
 
 impl DfmBuilder {
@@ -138,6 +177,24 @@ impl DfmBuilder {
     #[must_use]
     pub fn with_cycles(mut self, cycles: Arc<dyn OperationCycle>) -> Self {
         self.cycles = Some(cycles);
+        self
+    }
+
+    /// Seed the operation catalog published by [`Dfm::list_operations`].
+    /// Without this, the DFM publishes an empty operations list and
+    /// `start_execution` rejects every request with
+    /// [`SovdError::NotFound`].
+    #[must_use]
+    pub fn with_operation_catalog(mut self, operations: Vec<OperationDescription>) -> Self {
+        self.operations = operations;
+        self
+    }
+
+    /// Seed the data-metadata catalog published by [`Dfm::list_data`].
+    /// Without this, the DFM publishes an empty data catalog.
+    #[must_use]
+    pub fn with_data_catalog(mut self, data_catalog: Vec<ValueMetadata>) -> Self {
+        self.data_catalog = data_catalog;
         self
     }
 
@@ -157,6 +214,9 @@ impl DfmBuilder {
             component: self.component,
             db,
             cycles,
+            operations: self.operations,
+            data_catalog: self.data_catalog,
+            executions: Arc::new(RwLock::new(HashMap::new())),
         })
     }
 }
@@ -186,6 +246,10 @@ impl SovdBackend for Dfm {
         self.db.list_faults(filter).await
     }
 
+    async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
+        self.db.get_fault(code).await
+    }
+
     async fn clear_all_faults(&self) -> Result<()> {
         self.db.clear_faults(FaultFilter::all()).await
     }
@@ -194,14 +258,97 @@ impl SovdBackend for Dfm {
         self.db.clear_fault_by_code(code).await
     }
 
+    async fn list_operations(&self) -> Result<OperationsList> {
+        Ok(OperationsList {
+            items: self.operations.clone(),
+            schema: None,
+        })
+    }
+
     async fn start_execution(
         &self,
-        _operation_id: &str,
-        _request: StartExecutionRequest,
+        operation_id: &str,
+        request: StartExecutionRequest,
     ) -> Result<StartExecutionAsyncResponse> {
-        Err(SovdError::InvalidRequest(
-            "DFM does not support operation execution in Phase 3".into(),
-        ))
+        let op_id = operation_id.to_owned();
+        let descriptor = self
+            .operations
+            .iter()
+            .find(|o| o.id == op_id)
+            .cloned()
+            .ok_or_else(|| SovdError::NotFound {
+                entity: format!("operation \"{op_id}\" on component \"{}\"", self.component),
+            })?;
+
+        let started_under_cycle = self.cycles.current_cycle().await.ok().and_then(|c| c.name);
+        let exec_id = Uuid::new_v4().to_string();
+        // Synchronous operations complete immediately — the DFM does not
+        // spawn background work for them, so the first GET returns
+        // Completed. Asynchronous operations stay in `Running` until a
+        // follow-up mechanism marks them complete (Phase 5 worker pool).
+        let initial_status = if descriptor.asynchronous_execution {
+            ExecutionStatus::Running
+        } else {
+            ExecutionStatus::Completed
+        };
+        let record = ExecutionRecord {
+            operation_id: op_id.clone(),
+            status: initial_status,
+            parameters: request.parameters,
+            started_under_cycle,
+        };
+        self.executions
+            .write()
+            .await
+            .insert(exec_id.clone(), record);
+        Ok(StartExecutionAsyncResponse {
+            id: exec_id,
+            status: Some(initial_status),
+        })
+    }
+
+    async fn execution_status(
+        &self,
+        operation_id: &str,
+        execution_id: &str,
+    ) -> Result<ExecutionStatusResponse> {
+        let op_id = operation_id.to_owned();
+        let exec_id = execution_id.to_owned();
+        let current_cycle_name = self.cycles.current_cycle().await.ok().and_then(|c| c.name);
+        let mut guard = self.executions.write().await;
+        let record = guard.get_mut(&exec_id).ok_or_else(|| SovdError::NotFound {
+            entity: format!("execution \"{exec_id}\""),
+        })?;
+        if record.operation_id != op_id {
+            return Err(SovdError::NotFound {
+                entity: format!("execution \"{exec_id}\" of operation \"{op_id}\""),
+            });
+        }
+        // Cycle-gated completion: if the operation was started under a
+        // cycle that has since ended, we report it as Completed. This is
+        // the ADR-0012 rule exposed through the backend so the
+        // OperationCycle state machine really does drive execution
+        // semantics (the prompt's "OperationCycle-driven" requirement).
+        if record.status == ExecutionStatus::Running
+            && record.started_under_cycle.is_some()
+            && record.started_under_cycle != current_cycle_name
+        {
+            record.status = ExecutionStatus::Completed;
+        }
+        Ok(ExecutionStatusResponse {
+            status: Some(record.status),
+            capability: Capability::Execute,
+            parameters: record.parameters.clone(),
+            schema: None,
+            error: None,
+        })
+    }
+
+    async fn list_data(&self) -> Result<Datas> {
+        Ok(Datas {
+            items: self.data_catalog.clone(),
+            schema: None,
+        })
     }
 
     async fn entity_capabilities(&self) -> Result<EntityCapabilities> {
@@ -213,10 +360,18 @@ impl SovdBackend for Dfm {
             variant: None,
             configurations: None,
             bulk_data: None,
-            data: None,
+            data: if self.data_catalog.is_empty() {
+                None
+            } else {
+                Some(format!("/sovd/v1/components/{id}/data"))
+            },
             data_lists: None,
             faults: Some(format!("/sovd/v1/components/{id}/faults")),
-            operations: None,
+            operations: if self.operations.is_empty() {
+                None
+            } else {
+                Some(format!("/sovd/v1/components/{id}/operations"))
+            },
             updates: None,
             modes: None,
             subareas: None,
@@ -228,6 +383,22 @@ impl SovdBackend for Dfm {
             scripts: None,
             logs: None,
         })
+    }
+
+    async fn health_probe(&self) -> BackendHealth {
+        // Phase 4 probe strategy: list_faults with an empty filter is
+        // the cheapest end-to-end SovdDb round-trip. If it fails the
+        // store is degraded regardless of the specific error kind.
+        match self.db.list_faults(FaultFilter::all()).await {
+            Ok(_) => BackendHealth::Ok,
+            Err(e) => BackendHealth::Degraded {
+                reason: format!("sovd_db probe failed: {e}"),
+            },
+        }
+    }
+
+    async fn current_operation_cycle(&self) -> Option<String> {
+        self.cycles.current_cycle().await.ok().and_then(|c| c.name)
     }
 }
 

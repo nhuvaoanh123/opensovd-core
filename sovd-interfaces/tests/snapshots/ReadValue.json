@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "description": "Single-value read result returned from `GET .../data/{data-id}`.\n\nProvenance: `commons/types.yaml#ReadValue`.",
+  "description": "Single-value read result returned from `GET .../data/{data-id}`.\n\nProvenance: `commons/types.yaml#ReadValue`. Rust-named\n`SovdReadValue` for the same reason as [`SovdValue`].",
   "required": [
     "id",
     "data"

@@ -28,6 +28,7 @@ members = [
   "sovd-tracing",
   "sovd-main",
   "integration-tests",
+  "xtask",
   "crates/sovd-db-sqlite",
   "crates/sovd-db-score",
   "crates/fault-sink-unix",

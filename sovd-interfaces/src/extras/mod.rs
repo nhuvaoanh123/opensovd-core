@@ -32,3 +32,4 @@
 //! moved into [`crate::spec`] as part of the next spec sync.
 
 pub mod fault;
+pub mod health;

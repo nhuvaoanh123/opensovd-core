@@ -1,13 +1,15 @@
 {
   "type": "object",
-  "description": "Response body for `GET .../data-lists/{data-list-id}`.\n\nProvenance: `commons/types.yaml#ListOfValues`.",
+  "description": "Response body for `GET .../data-lists/{data-list-id}`.\n\nProvenance: `commons/types.yaml#ListOfValues`. Rust-named\n`SovdListOfValues` for the same reason as [`SovdValue`].",
   "properties": {
     "items": {
       "type": [
         "array",
         "null"
       ],
-      "items": {},
+      "items": {
+        "$ref": "#/components/schemas/SovdValue"
+      },
       "description": "All values returned in this read batch."
     }
   }

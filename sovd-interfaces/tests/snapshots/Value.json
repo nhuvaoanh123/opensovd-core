@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "description": "One read result from the SOVD `data` endpoint.\n\nProvenance: `commons/types.yaml#Value`.",
+  "description": "One read result from the SOVD `data` endpoint.\n\nProvenance: `commons/types.yaml#Value`.\n\n# Rust-name vs. spec-name (Phase 4 D3)\n\nThe SOVD spec names this type `Value`. At the Rust level we call\nit `SovdValue` so the `utoipa` 5.4 `components(schemas(...))`\nderive can register it — utoipa 5.4 fails with \"proc-macro derive\nproduced unparsable tokens\" when a schema named `Value` is\nregistered at the top of the components list (an internal short-\nname alias clash, see `docs/openapi-audit-2026-04-14.md`). The\nwire shape is unchanged.\n\nA legacy `pub type Value = SovdValue;` alias is exported so the\nPhase 3 module path `sovd_interfaces::spec::data::Value` still\nresolves; it is used in fault filters and the operations layer.",
   "required": [
     "id",
     "data"

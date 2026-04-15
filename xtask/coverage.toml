@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# Phase 4 Line A D10 coverage configuration.
+#
+# Consumed by the `cargo xtask coverage` subcommand (to land after
+# Phase 4 merge) and documented here for humans running
+# `cargo llvm-cov` by hand during development.
+
+[coverage]
+# Minimum line coverage the Phase 4 gate enforces on the two Phase 4
+# target crates. Raising the threshold is a follow-up ticket after
+# stabilisation.
+fail_under_lines = 70
+packages = ["sovd-server", "sovd-gateway"]
+
+# Invoke for the full workspace:
+#   cargo llvm-cov --workspace --tests --summary-only
+#
+# Invoke for just the two gate crates:
+#   cargo llvm-cov --workspace --tests -p sovd-server -p sovd-gateway --summary-only
+#
+# `sovd-server::backends::cda.rs` is intentionally excluded from the
+# 70% enforcement because it is the Phase 2 forwarder surface — its
+# coverage is driven by the `TAKTFLOW_BENCH=1`-gated phase2 /
+# phase4 full-chain tests, which do not run on developer workstations.

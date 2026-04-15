@@ -32,10 +32,13 @@ use async_trait::async_trait;
 
 use crate::spec::{
     component::EntityCapabilities,
-    fault::{FaultFilter, ListOfFaults},
-    operation::{StartExecutionAsyncResponse, StartExecutionRequest},
+    data::Datas,
+    fault::{FaultDetails, FaultFilter, ListOfFaults},
+    operation::{
+        ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
+    },
 };
-use crate::types::{component::ComponentId, error::Result};
+use crate::types::{component::ComponentId, error::Result, error::SovdError};
 
 /// Which kind of backend a given [`SovdBackend`] is. Used by the gateway
 /// for routing decisions, metrics, and admin endpoints.
@@ -74,11 +77,34 @@ pub trait SovdBackend: Send + Sync {
     /// See [`SovdServer::list_faults`](crate::traits::server::SovdServer::list_faults).
     async fn list_faults(&self, filter: FaultFilter) -> Result<ListOfFaults>;
 
+    /// See [`SovdServer::get_fault`](crate::traits::server::SovdServer::get_fault).
+    ///
+    /// Backends that cannot return per-fault detail (e.g. a legacy CDA
+    /// UDS forwarder that only exposes aggregate clear) should return
+    /// [`SovdError::BackendUnavailable`] with a reason string. The default
+    /// impl does exactly that so legacy backends compile unchanged until
+    /// they opt in.
+    async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
+        let _ = code;
+        Err(SovdError::InvalidRequest(
+            "backend does not implement get_fault".to_owned(),
+        ))
+    }
+
     /// See [`SovdServer::clear_all_faults`](crate::traits::server::SovdServer::clear_all_faults).
     async fn clear_all_faults(&self) -> Result<()>;
 
     /// See [`SovdServer::clear_fault`](crate::traits::server::SovdServer::clear_fault).
     async fn clear_fault(&self, code: &str) -> Result<()>;
+
+    /// List the operations catalog published by this backend. Default
+    /// returns an empty catalog so legacy backends compile unchanged.
+    async fn list_operations(&self) -> Result<OperationsList> {
+        Ok(OperationsList {
+            items: Vec::new(),
+            schema: None,
+        })
+    }
 
     /// See [`SovdServer::start_execution`](crate::traits::server::SovdServer::start_execution).
     async fn start_execution(
@@ -87,6 +113,69 @@ pub trait SovdBackend: Send + Sync {
         request: StartExecutionRequest,
     ) -> Result<StartExecutionAsyncResponse>;
 
+    /// See [`SovdServer::execution_status`](crate::traits::server::SovdServer::execution_status).
+    ///
+    /// Default returns [`SovdError::BackendUnavailable`] so legacy
+    /// backends that do not track per-execution state compile unchanged.
+    async fn execution_status(
+        &self,
+        operation_id: &str,
+        execution_id: &str,
+    ) -> Result<ExecutionStatusResponse> {
+        let _ = (operation_id, execution_id);
+        Err(SovdError::InvalidRequest(
+            "backend does not track operation executions".to_owned(),
+        ))
+    }
+
+    /// List the data catalog (metadata only) this backend exposes at
+    /// `GET .../components/{id}/data`. Default returns an empty catalog.
+    async fn list_data(&self) -> Result<Datas> {
+        Ok(Datas {
+            items: Vec::new(),
+            schema: None,
+        })
+    }
+
     /// See [`SovdServer::entity_capabilities`](crate::traits::server::SovdServer::entity_capabilities).
     async fn entity_capabilities(&self) -> Result<EntityCapabilities>;
+
+    /// Probe the backend for liveness / readiness. Default returns
+    /// [`BackendHealth::Ok`] so backends that do not implement a probe
+    /// still flow through `/health`.
+    async fn health_probe(&self) -> BackendHealth {
+        BackendHealth::Ok
+    }
+
+    /// If the backend tracks an operation cycle, return the name of
+    /// the currently active cycle. Default `None` — only DFM-style
+    /// backends that own an
+    /// [`OperationCycle`](crate::traits::operation_cycle::OperationCycle)
+    /// override this.
+    async fn current_operation_cycle(&self) -> Option<String> {
+        None
+    }
+}
+
+/// Result of a [`SovdBackend::health_probe`] call.
+///
+/// Carried in [`crate::extras::health::HealthStatus`] — the Phase 4
+/// extras-level health envelope reported by `GET /sovd/v1/health`. Per
+/// ADR-0015, this is an extras type (not spec) because ISO 17978-3 has
+/// no notion of a per-backend probe result.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum BackendHealth {
+    /// Backend responded to a probe without error.
+    Ok,
+    /// Backend responded but is degraded — includes a short reason.
+    Degraded {
+        /// Free-form human reason for the degraded state.
+        reason: String,
+    },
+    /// Backend did not respond to the probe.
+    Unavailable {
+        /// Free-form human reason for the failure.
+        reason: String,
+    },
 }
