@@ -185,6 +185,71 @@ impl CdaBackend {
         &self.path_prefix
     }
 
+    /// Probe the configured downstream REST root to verify the
+    /// [`Self::path_prefix`] actually matches what the remote CDA is
+    /// serving. Issues a `GET {base_url}{path_prefix}/components` and
+    /// accepts any response status that proves the route is mounted
+    /// (2xx, 401/403 if CDA enforces auth, or any 4xx other than 404
+    /// — a 404 on the `components` collection endpoint is treated as
+    /// a prefix mismatch).
+    ///
+    /// This catches the "CDA is reachable but serving a different
+    /// route prefix" case early so integration tests can fail with a
+    /// clear `SovdError::InvalidRequest` instead of a mid-test 404.
+    ///
+    /// # Errors
+    ///
+    /// - [`SovdError::BackendUnavailable`] if the HTTP probe cannot
+    ///   connect at all.
+    /// - [`SovdError::InvalidRequest`] if the probe reaches the server
+    ///   but the prefix is clearly wrong (404 on `components`).
+    /// - [`SovdError::Transport`] on any other unexpected response.
+    pub async fn preflight(&self) -> Result<()> {
+        let joined = if self.path_prefix.is_empty() {
+            "components".to_owned()
+        } else {
+            format!("{}/components", self.path_prefix)
+        };
+        let url = self
+            .base_url
+            .join(&joined)
+            .map_err(|e| SovdError::InvalidRequest(format!("bad CDA URL: {e}")))?;
+        let resp = match self.http.get(url.clone()).send().await {
+            Ok(r) => r,
+            Err(e) => {
+                if e.is_connect() || e.is_timeout() || e.is_request() {
+                    return Err(SovdError::BackendUnavailable(self.component_id.clone()));
+                }
+                return Err(SovdError::Transport(format!(
+                    "CDA preflight {url}: {e}"
+                )));
+            }
+        };
+        let status = resp.status();
+        if status.is_success()
+            || status == StatusCode::UNAUTHORIZED
+            || status == StatusCode::FORBIDDEN
+        {
+            return Ok(());
+        }
+        if status == StatusCode::NOT_FOUND {
+            return Err(SovdError::InvalidRequest(format!(
+                "CDA preflight: {url} returned 404 — path_prefix {:?} likely does not \
+                 match the upstream CDA REST root. Expected e.g. \"vehicle/v15\" (current \
+                 upstream) or \"sovd/v1\" (future). See CdaBackend::new_with_path_prefix.",
+                self.path_prefix
+            )));
+        }
+        // Any other 4xx is a soft pass — route exists but rejected
+        // the probe shape. 5xx is a wire failure worth surfacing.
+        if status.is_client_error() {
+            return Ok(());
+        }
+        Err(SovdError::Transport(format!(
+            "CDA preflight {url}: unexpected status {status}"
+        )))
+    }
+
     /// Build the downstream component sub-path for this backend's
     /// component under the configured [`Self::path_prefix`], e.g.
     /// `vehicle/v15/components/cvc/faults`. The returned [`Url`] is
