@@ -421,7 +421,10 @@ impl Gateway {
             // Empty gateway is a valid configuration — return an empty
             // list rather than faulting. (A deployment with zero
             // hosts is useful for the Phase 0 sanity check.)
-            return Ok(DiscoveredEntities { items });
+            return Ok(DiscoveredEntities {
+                items,
+                extras: None,
+            });
         }
         if !any_success {
             return Err(SovdError::Transport(format!(
@@ -430,7 +433,10 @@ impl Gateway {
             )));
         }
         items.sort_by(|a, b| a.id.cmp(&b.id));
-        Ok(DiscoveredEntities { items })
+        Ok(DiscoveredEntities {
+            items,
+            extras: None,
+        })
     }
 }
 
@@ -682,6 +688,128 @@ mod tests {
             matches!(err, SovdError::InvalidRequest(ref m) if m.contains("already served")),
             "{err:?}"
         );
+    }
+
+    // D5-red: ADR-0018 rule 5 mandates half-open handling in the
+    // RemoteHost fan-out: one dead host out of N must NOT poison the
+    // whole `GET /components` response. The live hosts' entries come
+    // through, and the dead host's component ids are captured as
+    // status: "host-unreachable" in the aggregated response extras.
+    //
+    // The test uses two in-process LocalHost fakes wired through the
+    // GatewayHost trait. One fake panics on entity_capabilities —
+    // simulating a remote host becoming unreachable — the other
+    // answers normally. Gateway::list_components should see the
+    // live one and mark the dead one's component in extras.host_unreachable.
+
+    struct DeadHost {
+        name: String,
+        components: Vec<ComponentId>,
+    }
+
+    #[async_trait]
+    impl GatewayHost for DeadHost {
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn components(&self) -> Vec<ComponentId> {
+            self.components.clone()
+        }
+        async fn list_faults(
+            &self,
+            component: &ComponentId,
+            _filter: FaultFilter,
+        ) -> SovdResult<ListOfFaults> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn get_fault(&self, component: &ComponentId, _code: &str) -> SovdResult<FaultDetails> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn clear_all_faults(&self, component: &ComponentId) -> SovdResult<()> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn clear_fault(&self, component: &ComponentId, _code: &str) -> SovdResult<()> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn list_operations(&self, component: &ComponentId) -> SovdResult<OperationsList> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn start_execution(
+            &self,
+            component: &ComponentId,
+            _operation_id: &str,
+            _request: StartExecutionRequest,
+        ) -> SovdResult<StartExecutionAsyncResponse> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn execution_status(
+            &self,
+            component: &ComponentId,
+            _operation_id: &str,
+            _execution_id: &str,
+        ) -> SovdResult<ExecutionStatusResponse> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn entity_capabilities(
+            &self,
+            component: &ComponentId,
+        ) -> SovdResult<EntityCapabilities> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn list_components_survives_one_dead_host() {
+        let mut gateway = Gateway::new();
+        gateway
+            .register_host(Arc::new(
+                LocalHost::new("live", vec![mock_backend("cvc")]).unwrap(),
+            ))
+            .unwrap();
+        gateway
+            .register_host(Arc::new(DeadHost {
+                name: "dead".into(),
+                components: vec![ComponentId::new("fzc"), ComponentId::new("rzc")],
+            }))
+            .unwrap();
+        let discovered = gateway
+            .list_components()
+            .await
+            .expect("list_components must not fail on partial outage");
+        let ids: Vec<String> = discovered.items.iter().map(|r| r.id.clone()).collect();
+        assert_eq!(ids, vec!["cvc"], "live host's components must come through");
+        let extras = discovered
+            .extras
+            .as_ref()
+            .expect("extras must be set when a host is unreachable");
+        let unreachable_raw = extras
+            .host_unreachable
+            .as_ref()
+            .expect("host_unreachable list must be populated");
+        let mut unreachable_sorted = unreachable_raw.clone();
+        unreachable_sorted.sort();
+        assert_eq!(
+            unreachable_sorted,
+            vec!["fzc".to_owned(), "rzc".to_owned()],
+            "dead host's components must be reported in host_unreachable"
+        );
+        assert!(extras.stale, "stale flag must be set on partial outage");
     }
 
     #[tokio::test]

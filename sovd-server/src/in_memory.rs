@@ -309,7 +309,10 @@ impl InMemoryServer {
             }
         }
         items.sort_by(|a, b| a.id.cmp(&b.id));
-        Ok(DiscoveredEntities { items })
+        Ok(DiscoveredEntities {
+            items,
+            extras: None,
+        })
     }
 
     /// Dispatch `list_faults` for `component`, forwarding to the
