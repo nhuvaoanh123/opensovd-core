@@ -96,6 +96,16 @@ pub struct ListOfFaults {
     /// Optional embedded JSON Schema describing the response shape.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<serde_json::Value>,
+
+    /// Soft-fail marker per ADR-0018 rule 4. Absent on the nominal
+    /// path so the spec-pure shape is preserved; set to
+    /// `Some(ResponseExtras { stale: true, .. })` when the backend
+    /// returned a last-known snapshot because a fresh query failed
+    /// or a retry budget was exhausted.
+    ///
+    /// Extra (per ADR-0006): not part of ISO 17978-3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extras: Option<crate::extras::response::ResponseExtras>,
 }
 
 /// Response body for `GET /{entity-collection}/{entity-id}/faults/{fault-code}`.
@@ -118,6 +128,12 @@ pub struct FaultDetails {
     /// Optional embedded JSON Schema describing the response shape.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<serde_json::Value>,
+
+    /// Soft-fail marker per ADR-0018 rule 4. Absent on the nominal
+    /// path; set with `stale: true` when a degraded response is
+    /// served. Extra (per ADR-0006): not part of ISO 17978-3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extras: Option<crate::extras::response::ResponseExtras>,
 }
 
 /// Filter applied to `GET .../faults`.
@@ -203,6 +219,7 @@ mod tests {
         let list = ListOfFaults {
             items: vec![sample_fault()],
             schema: None,
+            extras: None,
         };
         let json = serde_json::to_string(&list).expect("serialize");
         let back: ListOfFaults = serde_json::from_str(&json).expect("deserialize");
@@ -222,6 +239,7 @@ mod tests {
             })),
             errors: None,
             schema: None,
+            extras: None,
         };
         let json = serde_json::to_string(&details).expect("serialize");
         let back: FaultDetails = serde_json::from_str(&json).expect("deserialize");

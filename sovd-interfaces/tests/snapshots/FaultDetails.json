@@ -18,6 +18,17 @@
       },
       "description": "Errors related to `environment_data`, if any."
     },
+    "extras": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ResponseExtras",
+          "description": "Soft-fail marker per ADR-0018 rule 4. Absent on the nominal\npath; set with `stale: true` when a degraded response is\nserved. Extra (per ADR-0006): not part of ISO 17978-3."
+        }
+      ]
+    },
     "item": {
       "$ref": "#/components/schemas/Fault",
       "description": "The fault entry itself."

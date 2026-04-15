@@ -807,6 +807,14 @@ components:
           items:
             $ref: '#/components/schemas/DataError'
           description: Errors related to `environment_data`, if any.
+        extras:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ResponseExtras'
+            description: |-
+              Soft-fail marker per ADR-0018 rule 4. Absent on the nominal
+              path; set with `stale: true` when a degraded response is
+              served. Extra (per ADR-0006): not part of ISO 17978-3.
         item:
           $ref: '#/components/schemas/Fault'
           description: The fault entry itself.
@@ -931,6 +939,18 @@ components:
       required:
       - items
       properties:
+        extras:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ResponseExtras'
+            description: |-
+              Soft-fail marker per ADR-0018 rule 4. Absent on the nominal
+              path so the spec-pure shape is preserved; set to
+              `Some(ResponseExtras { stale: true, .. })` when the backend
+              returned a last-known snapshot because a fresh query failed
+              or a retry budget was exhausted.
+
+              Extra (per ADR-0006): not part of ISO 17978-3.
         items:
           type: array
           items:
@@ -1033,6 +1053,57 @@ components:
           description: |-
             Absolute UTC timestamp at which the challenge expires.
             (RFC 3339 / ISO 8601 string.)
+    ResponseExtras:
+      type: object
+      description: |-
+        Soft-fail metadata attached to a SOVD response body per ADR-0018.
+
+        Extra (per ADR-0006): not part of ISO 17978-3. Carried as an
+        optional, flatten-friendly struct under the `extras` field of
+        select response types.
+
+        # Field conventions
+
+        - `stale` is `true` when the backend returned something other
+          than a fresh, authoritative result (e.g. the last-known cache
+          snapshot, a degraded retry result, or an aggregated fan-out
+          with one host missing).
+        - `age_ms` is set when the response came from a cache; it is the
+          age of the snapshot in milliseconds.
+        - `host_unreachable` is a sorted list of component ids whose
+          remote host could not be reached during a `sovd-gateway`
+          fan-out. An empty list or `None` means "no known partial
+          failures."
+      properties:
+        age_ms:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          description: |-
+            Age of the cached snapshot in milliseconds, when `stale` was
+            set because a cache was served instead of fresh data.
+          minimum: 0
+        host_unreachable:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/String'
+          description: |-
+            Component ids whose backing remote host was unreachable during
+            this request. Used by `sovd-gateway::list_components` fan-out
+            per ADR-0018 rule 5.
+
+            Wire type is `Vec<String>` (not `Vec<ComponentId>`) because
+            `ComponentId` does not derive `utoipa::ToSchema`; call sites
+            that need the typed form convert via
+            [`ResponseExtras::host_unreachable_typed`].
+        stale:
+          type: boolean
+          description: |-
+            `true` when this response is a degraded / last-known fallback
+            rather than a full-strength answer.
     Severity:
       type: string
       description: |-
@@ -1178,6 +1249,8 @@ components:
             description: Error, if the operation failed.
         parameters:
           description: Operation response parameters. Open `object` per spec.
+    String:
+      type: string
     ValueGroup:
       type: object
       description: |-

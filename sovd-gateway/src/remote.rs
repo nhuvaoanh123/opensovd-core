@@ -378,6 +378,7 @@ mod tests {
                 tags: None,
             }],
             schema: None,
+            extras: None,
         })
     }
 
@@ -400,6 +401,7 @@ mod tests {
             environment_data: None,
             errors: None,
             schema: None,
+            extras: None,
         })
     }
 

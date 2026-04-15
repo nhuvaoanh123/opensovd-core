@@ -570,6 +570,7 @@ mod tests {
             Ok(ListOfFaults {
                 items: Vec::new(),
                 schema: None,
+                extras: None,
             })
         }
         async fn clear_all_faults(&self) -> SovdResult<()> {
