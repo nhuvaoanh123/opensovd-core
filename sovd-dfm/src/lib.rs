@@ -39,7 +39,7 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use sovd_interfaces::{
@@ -67,6 +67,12 @@ use uuid::Uuid;
 pub mod config;
 
 pub use config::{DfmBackendConfig, FaultSinkBackend, OperationCycleBackend, PersistenceBackend};
+
+/// ADR-0018 rule 3: default budget for `try_lock_with_timeout`. The
+/// operation under the guard must be short-running; the budget is
+/// the outer wall-clock window we are willing to block before
+/// falling back to a degraded response.
+const LOCK_BUDGET: Duration = Duration::from_millis(50);
 
 /// Record of one operation execution managed by the DFM.
 #[derive(Debug, Clone)]
@@ -272,16 +278,57 @@ impl SovdBackend for Dfm {
         // the original error only if the cache is empty.
         match self.db.list_faults(filter).await {
             Ok(list) => {
-                let mut cache = self.last_known_faults.write().await;
-                *cache = Some(LastKnownFaults {
-                    items: list.items.clone(),
-                    captured_at: Instant::now(),
-                });
+                // ADR-0018 rule 3: bounded lock acquisition. If we
+                // cannot grab the cache within LOCK_BUDGET we skip
+                // cache update and return the fresh list anyway —
+                // the next successful call will update the cache.
+                if let Ok(mut cache) =
+                    tokio::time::timeout(LOCK_BUDGET, self.last_known_faults.write()).await
+                {
+                    *cache = Some(LastKnownFaults {
+                        items: list.items.clone(),
+                        captured_at: Instant::now(),
+                    });
+                } else {
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "cache_lock_timeout",
+                        budget_ms = u64::try_from(LOCK_BUDGET.as_millis()).unwrap_or(u64::MAX),
+                        "Dfm: last_known_faults write lock contended; skipping cache update"
+                    );
+                }
                 Ok(list)
             }
             Err(err) => {
-                let cache = self.last_known_faults.read().await;
-                if let Some(snapshot) = cache.as_ref() {
+                // Bounded read per ADR-0018 rule 3. Short-circuit to
+                // the original error on contention rather than hang.
+                let cache_guard = if let Ok(guard) = tokio::time::timeout(
+                    LOCK_BUDGET,
+                    self.last_known_faults.read(),
+                )
+                .await
+                {
+                    Some(guard)
+                } else {
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "cache_lock_timeout",
+                        budget_ms = u64::try_from(LOCK_BUDGET.as_millis()).unwrap_or(u64::MAX),
+                        "Dfm: last_known_faults read lock contended on fallback"
+                    );
+                    None
+                };
+                let Some(guard) = cache_guard.as_ref() else {
+                    return Err(SovdError::Degraded {
+                        reason: "dfm cache lock contention".into(),
+                    });
+                };
+                let cache = guard.as_ref();
+                if let Some(snapshot) = cache {
                     let age_ms = u64::try_from(snapshot.captured_at.elapsed().as_millis())
                         .unwrap_or(u64::MAX);
                     tracing::warn!(
@@ -619,6 +666,101 @@ mod tests {
             extras.age_ms.is_some(),
             "age_ms must be populated on stale cache response"
         );
+    }
+
+    // D6: lock contention stress. ADR-0018 rule 3 mandates that
+    // backend locks use a bounded acquisition budget (default 50 ms)
+    // and fall back to Degraded on timeout rather than hanging. We
+    // exercise the path by holding the last_known_faults write lock
+    // externally for longer than LOCK_BUDGET, then firing a
+    // list_faults call — under nominal behaviour the DFM should
+    // either skip its cache update silently (on the Ok() branch)
+    // or surface a Degraded on the fallback read branch.
+    #[tokio::test]
+    async fn list_faults_write_cache_timeout_does_not_hang() {
+        use sovd_interfaces::spec::fault::Fault;
+        use sovd_interfaces::traits::sovd_db::SovdDb;
+
+        struct AlwaysOkDb;
+
+        #[async_trait]
+        impl SovdDb for AlwaysOkDb {
+            async fn ingest_fault(
+                &self,
+                _record: sovd_interfaces::extras::fault::FaultRecord,
+            ) -> Result<()> {
+                Ok(())
+            }
+            async fn list_faults(&self, _filter: FaultFilter) -> Result<ListOfFaults> {
+                Ok(ListOfFaults {
+                    items: vec![Fault {
+                        code: "LIVE".into(),
+                        scope: None,
+                        display_code: None,
+                        fault_name: "live".into(),
+                        fault_translation_id: None,
+                        severity: Some(2),
+                        status: None,
+                        symptom: None,
+                        symptom_translation_id: None,
+                        tags: None,
+                    }],
+                    schema: None,
+                    extras: None,
+                })
+            }
+            async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
+                Err(SovdError::NotFound {
+                    entity: code.into(),
+                })
+            }
+            async fn clear_faults(&self, _filter: FaultFilter) -> Result<()> {
+                Ok(())
+            }
+            async fn clear_fault_by_code(&self, _code: &str) -> Result<()> {
+                Ok(())
+            }
+            async fn snapshot_for_operation_cycle(
+                &self,
+                _cycle_id: &sovd_interfaces::traits::sovd_db::OperationCycleId,
+            ) -> Result<()> {
+                Ok(())
+            }
+        }
+
+        let db: Arc<dyn SovdDb> = Arc::new(AlwaysOkDb);
+        let cycles: Arc<dyn OperationCycle> =
+            Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
+        let dfm = Arc::new(
+            Dfm::builder(ComponentId::new("cvc"))
+                .with_db(db)
+                .with_cycles(cycles)
+                .build()
+                .expect("build"),
+        );
+
+        // Take the write lock for > LOCK_BUDGET (50 ms) so the
+        // in-flight list_faults caches contend on the write path.
+        let blocker_dfm = Arc::clone(&dfm);
+        let blocker = tokio::spawn(async move {
+            let _guard = blocker_dfm.last_known_faults.write().await;
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+        // Let the blocker acquire the lock first.
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        // This call must return (not hang) within the test timeout,
+        // and must return the live list — the cache update is
+        // allowed to no-op on lock timeout per ADR-0018 rule 3.
+        let list = tokio::time::timeout(
+            Duration::from_millis(500),
+            dfm.list_faults(FaultFilter::all()),
+        )
+        .await
+        .expect("list_faults must not hang under lock contention")
+        .expect("live list_faults should still succeed");
+        assert_eq!(list.items.len(), 1);
+        blocker.await.expect("blocker task");
     }
 
     #[tokio::test]
