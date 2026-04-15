@@ -9,34 +9,23 @@
 # https://www.apache.org/licenses/LICENSE-2.0
 
 [package]
-name = "integration-tests"
+name = "xtask"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 homepage.workspace = true
 publish = false
-description = "Integration tests harness for the Eclipse OpenSOVD core stack"
+description = "Workspace-scoped developer task runner for Eclipse OpenSOVD core"
 
 [lints]
 workspace = true
 
-[lib]
-path = "src/lib.rs"
+[[bin]]
+name = "xtask"
+path = "src/main.rs"
 
 [dependencies]
-
-[dev-dependencies]
 sovd-server = { workspace = true }
-sovd-interfaces = { workspace = true }
-sovd-dfm = { workspace = true }
-sovd-db-sqlite = { workspace = true }
-opcycle-taktflow = { workspace = true }
-axum = { workspace = true, features = ["http1", "tokio"] }
-serde = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "time", "sync"] }
-reqwest = { workspace = true, features = ["json"] }
-serde_json = { workspace = true }
-tempfile = { workspace = true }
-url = { workspace = true }
+clap = { workspace = true }
 utoipa = { workspace = true, features = ["yaml"] }

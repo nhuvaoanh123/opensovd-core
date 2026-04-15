@@ -1,0 +1,1269 @@
+openapi: 3.1.0
+info:
+  title: sovd-server
+  description: HTTP/REST SOVD server for the Eclipse OpenSOVD core stack
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+  version: 0.1.0
+paths:
+  /sovd/v1/components:
+    get:
+      tags:
+      - discovery
+      summary: '`GET /sovd/v1/components` — list every demo component.'
+      description: |-
+        # Errors
+
+        Maps any [`SovdError`](sovd_interfaces::SovdError) from the underlying
+        [`InMemoryServer`] onto an HTTP error via [`ApiError`].
+      operationId: listComponents
+      responses:
+        '200':
+          description: List of registered SOVD components
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveredEntities'
+  /sovd/v1/components/{component_id}:
+    get:
+      tags:
+      - discovery
+      summary: '`GET /sovd/v1/components/{component_id}` — entity capabilities.'
+      description: |-
+        # Errors
+
+        Returns 404 if the component is not registered; any other
+        [`SovdError`](sovd_interfaces::SovdError) is mapped via [`ApiError`].
+      operationId: getComponent
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Entity capability summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityCapabilities'
+        '404':
+          description: Component not found
+  /sovd/v1/components/{component_id}/data:
+    get:
+      tags:
+      - data-access
+      summary: |-
+        `GET /sovd/v1/components/{component_id}/data` — list the
+        data-metadata catalog.
+      description: |-
+        # Errors
+
+        Returns 404 if the component is unknown; other
+        [`SovdError`](sovd_interfaces::SovdError) values are mapped via
+        [`ApiError`].
+      operationId: listData
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Data-metadata catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datas'
+        '404':
+          description: Component not found
+  /sovd/v1/components/{component_id}/faults:
+    get:
+      tags:
+      - fault-handling
+      summary: '`GET /sovd/v1/components/{component_id}/faults` — list faults.'
+      description: |-
+        # Errors
+
+        Returns 404 if the component is unknown; other
+        [`SovdError`](sovd_interfaces::SovdError) values are mapped via
+        [`ApiError`].
+      operationId: getFaults
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      - name: severity
+        in: query
+        description: Severity upper bound (exclusive)
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: scope
+        in: query
+        description: Scope string
+        required: false
+        schema:
+          type: string
+      - name: status_key
+        in: query
+        description: Status filter in key:value form
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of faults
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfFaults'
+        '404':
+          description: Component not found
+    delete:
+      tags:
+      - fault-handling
+      summary: '`DELETE /sovd/v1/components/{component_id}/faults` — clear every fault.'
+      description: |-
+        # Errors
+
+        Returns 404 if the component is unknown.
+      operationId: deleteAllFaults
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: All faults cleared
+        '404':
+          description: Component not found
+  /sovd/v1/components/{component_id}/faults/{fault_code}:
+    get:
+      tags:
+      - fault-handling
+      summary: |-
+        `GET /sovd/v1/components/{component_id}/faults/{fault_code}` — fault
+        details for one code.
+      description: |-
+        # Errors
+
+        Returns 404 if the component or fault code is unknown.
+      operationId: getFaultById
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      - name: fault_code
+        in: path
+        description: Native fault code (string)
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Fault details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaultDetails'
+        '404':
+          description: Fault not found
+    delete:
+      tags:
+      - fault-handling
+      summary: |-
+        `DELETE /sovd/v1/components/{component_id}/faults/{fault_code}` — clear
+        one fault.
+      description: |-
+        # Errors
+
+        Returns 404 if the component or fault code is unknown.
+      operationId: deleteFaultById
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      - name: fault_code
+        in: path
+        description: Native fault code (string)
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Fault cleared
+        '404':
+          description: Fault not found
+  /sovd/v1/components/{component_id}/operations:
+    get:
+      tags:
+      - operations-control
+      summary: '`GET /sovd/v1/components/{component_id}/operations` — list operations.'
+      description: |-
+        # Errors
+
+        Returns 404 if the component is unknown.
+      operationId: listOperations
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of operations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsList'
+        '404':
+          description: Component not found
+  /sovd/v1/components/{component_id}/operations/{operation_id}/executions:
+    post:
+      tags:
+      - operations-control
+      summary: |-
+        `POST /sovd/v1/components/{component_id}/operations/{operation_id}/executions`
+        — start an execution. Always returns 202 async in the MVP.
+      description: |-
+        # Errors
+
+        Returns 404 if the component or operation id is unknown.
+      operationId: startExecution
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      - name: operation_id
+        in: path
+        description: SOVD operation id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartExecutionRequest'
+        required: true
+      responses:
+        '202':
+          description: Async execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartExecutionAsyncResponse'
+        '404':
+          description: Component or operation not found
+  /sovd/v1/components/{component_id}/operations/{operation_id}/executions/{execution_id}:
+    get:
+      tags:
+      - operations-control
+      summary: |-
+        `GET /sovd/v1/components/{component_id}/operations/{operation_id}/executions/{execution_id}`
+        — look up current execution status.
+      description: |-
+        # Errors
+
+        Returns 404 if the execution id is unknown or belongs to a different
+        operation than `operation_id`.
+      operationId: getExecutionStatus
+      parameters:
+      - name: component_id
+        in: path
+        description: Stable component identifier
+        required: true
+        schema:
+          type: string
+      - name: operation_id
+        in: path
+        description: SOVD operation id
+        required: true
+        schema:
+          type: string
+      - name: execution_id
+        in: path
+        description: Per-execution identifier (UUID)
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionStatusResponse'
+        '404':
+          description: Execution not found
+components:
+  schemas:
+    ApplyCapabilityRequest:
+      type: object
+      description: |-
+        Request body for `PUT .../operations/{operation-id}/executions/{execution-id}`.
+
+        Provenance: `operations/requests.yaml#OtherCapabilities` (inline schema).
+      required:
+      - capability
+      properties:
+        capability:
+          $ref: '#/components/schemas/Capability'
+          description: Capability to apply.
+        parameters:
+          description: Capability parameters. Open `AnyValue` per spec.
+        proximity_response:
+          type:
+          - string
+          - 'null'
+          description: Response to the proximity challenge, if one was issued.
+        timeout:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          description: Server-side timeout in seconds.
+    BackendHealth:
+      oneOf:
+      - type: object
+        description: Backend responded to a probe without error.
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - ok
+      - type: object
+        description: Backend responded but is degraded — includes a short reason.
+        required:
+        - reason
+        - status
+        properties:
+          reason:
+            type: string
+            description: Free-form human reason for the degraded state.
+          status:
+            type: string
+            enum:
+            - degraded
+      - type: object
+        description: Backend did not respond to the probe.
+        required:
+        - reason
+        - status
+        properties:
+          reason:
+            type: string
+            description: Free-form human reason for the failure.
+          status:
+            type: string
+            enum:
+            - unavailable
+      description: |-
+        Result of a [`SovdBackend::health_probe`] call.
+
+        Carried in [`crate::extras::health::HealthStatus`] — the Phase 4
+        extras-level health envelope reported by `GET /sovd/v1/health`. Per
+        ADR-0015, this is an extras type (not spec) because ISO 17978-3 has
+        no notion of a per-backend probe result.
+    Capability:
+      type: string
+      description: |-
+        Capability that may be applied to an operation execution.
+
+        Provenance: `operations/types.yaml#Capability`.
+      enum:
+      - execute
+      - stop
+      - freeze
+      - reset
+      - status
+    DataCategoryInformation:
+      type: object
+      description: |-
+        Description of one supported data category.
+
+        Provenance: `data/types.yaml#DataCategoryInformation`.
+      required:
+      - item
+      properties:
+        category_translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating the category name.
+        item:
+          type: string
+          description: Category name (free string; URL-safe per spec pattern).
+    DataError:
+      type: object
+      description: |-
+        SOVD partial-error envelope, used when only one element of a structured
+        response failed.
+
+        Provenance: `commons/errors.yaml#DataError`.
+
+        `path` is a JSON Pointer pointing at the offending field of the response
+        body. `error` describes the failure in more detail.
+      required:
+      - path
+      properties:
+        error:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/GenericError'
+            description: Detailed error describing why `path` failed.
+        path:
+          type: string
+          description: JSON Pointer to the offending element of the response.
+    DataListEntry:
+      type: object
+      description: |-
+        Description of one specific data list provided by an entity.
+
+        Provenance: `data/types.yaml#DataListEntry`.
+      required:
+      - id
+      - items
+      properties:
+        id:
+          type: string
+          description: Stable identifier for the data list.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValueMetadata'
+          description: Members of the data list (each entry is one value's metadata).
+        tags:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Tags attached to this data list.
+    Datas:
+      type: object
+      description: |-
+        Response body for `GET .../components/{component}/data` — the list of
+        all data resources an entity provides.
+
+        Provenance: `data/responses.yaml#Datas` (inline response schema).
+
+        The schema is an inline object under the `Datas` response, with two
+        fields:
+
+        - `items`: array of `ValueMetadata` (required)
+        - `schema`: optional `OpenApiSchema` reference — only populated when
+          the client passes `include-schema=true`. The spec defines
+          `OpenApiSchema` as an arbitrary `OpenAPI` 3.1 schema subtree pulled in
+          via `$ref` from the upstream OAI schema file, so we carry it as a
+          free-form `serde_json::Value`. This is **not** a spec-type escape
+          hatch — the spec itself keeps this field intentionally open.
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValueMetadata'
+          description: |-
+            All data resources the entity exposes, each described by its
+            `ValueMetadata`.
+        schema:
+          description: |-
+            Optional embedded `OpenAPI` schema describing the response shape.
+            Only present when the client requests `include-schema=true`.
+    DiscoveredEntities:
+      type: object
+      description: |-
+        Response body for `GET /{entity-collection}` (no inline schema).
+
+        Provenance: `discovery/responses.yaml#discoveredEntities` (inline schema).
+
+        Used for the simpler list endpoints that do not also expose
+        `?include-schema=true`.
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityReference'
+          description: All entities in the collection.
+    DiscoveredEntitiesWithSchema:
+      type: object
+      description: |-
+        Response body for `GET /{entity-collection}` with optional schema embed.
+
+        Provenance: `discovery/responses.yaml#discoveredEntitiesWithSchema`
+        (inline schema).
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityReference'
+          description: All entities in the collection.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+    EntityCapabilities:
+      type: object
+      description: |-
+        Response body for `GET /{entity-collection}/{entity-id}`.
+
+        Provenance: `discovery/responses.yaml#discoveredEntityCapabilities`
+        (inline schema — the spec does not name it; we coin
+        `EntityCapabilities`).
+
+        Most of the fields are URI references to subordinate resource
+        collections (`faults`, `data`, `operations`, …) and are only set if
+        the entity supports that resource.
+      required:
+      - id
+      - name
+      properties:
+        bulk-data:
+          type:
+          - string
+          - 'null'
+          description: URI to the bulk-data sub-collection.
+        configurations:
+          type:
+          - string
+          - 'null'
+          description: URI to the configurations sub-collection.
+        data:
+          type:
+          - string
+          - 'null'
+          description: URI to the data sub-collection.
+        data-lists:
+          type:
+          - string
+          - 'null'
+          description: URI to the data-lists sub-collection.
+        depends-on:
+          type:
+          - string
+          - 'null'
+          description: URI to the depends-on reference collection.
+        faults:
+          type:
+          - string
+          - 'null'
+          description: URI to the faults sub-collection.
+        hosts:
+          type:
+          - string
+          - 'null'
+          description: URI to the hosts reference collection.
+        id:
+          type: string
+          description: Entity-Id, e.g. `"AdvancedLaneKeeping"`.
+        is-located-on:
+          type:
+          - string
+          - 'null'
+          description: URI to the parent component (apps only).
+        locks:
+          type:
+          - string
+          - 'null'
+          description: URI to the locks sub-collection.
+        logs:
+          type:
+          - string
+          - 'null'
+          description: URI to the logs collection.
+        modes:
+          type:
+          - string
+          - 'null'
+          description: URI to the modes sub-collection.
+        name:
+          type: string
+          description: Human-readable name of the entity.
+        operations:
+          type:
+          - string
+          - 'null'
+          description: URI to the operations sub-collection.
+        scripts:
+          type:
+          - string
+          - 'null'
+          description: URI to the scripts collection.
+        subareas:
+          type:
+          - string
+          - 'null'
+          description: URI to the subareas sub-collection (areas only).
+        subcomponents:
+          type:
+          - string
+          - 'null'
+          description: URI to the subcomponents sub-collection (components only).
+        translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `name`.
+        updates:
+          type:
+          - string
+          - 'null'
+          description: URI to the updates sub-collection.
+        variant:
+          description: Variant identification (open structure per spec — `AnyValue`).
+    EntityReference:
+      type: object
+      description: |-
+        Reference to one entity in a discovery list.
+
+        Provenance: `commons/types.yaml#EntityReference`.
+
+        `id`, `name`, and `href` are required by the spec.
+      required:
+      - id
+      - name
+      - href
+      properties:
+        href:
+          type: string
+          description: Absolute URI of the entity (including `{base_uri}`).
+        id:
+          type: string
+          description: Stable identifier for the entity.
+        name:
+          type: string
+          description: Human-readable name.
+        tags:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Tags attached to this entity.
+        translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `name`.
+    ExecutionStatus:
+      type: string
+      description: |-
+        Lifecycle state of one operation execution.
+
+        Provenance: `operations/types.yaml#ExecutionStatus`.
+      enum:
+      - running
+      - completed
+      - failed
+    ExecutionStatusResponse:
+      type: object
+      description: |-
+        Response body for `GET .../operations/{op-id}/executions/{execution-id}`.
+
+        Provenance: `operations/responses.yaml#GetExecutionStatus` (inline schema).
+      required:
+      - capability
+      properties:
+        capability:
+          $ref: '#/components/schemas/Capability'
+          description: Capability currently being applied.
+        error:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/DataError'
+          description: Errors raised during execution.
+        parameters:
+          description: Operation parameters. Open `AnyValue` per spec.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+        status:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ExecutionStatus'
+            description: Current status.
+    ExecutionsList:
+      type: object
+      description: |-
+        Response body for `GET .../operations/{op-id}/executions`.
+
+        Provenance: `operations/responses.yaml#GetExecutions` (inline schema).
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+          description: All currently existing execution identifiers.
+    Fault:
+      type: object
+      description: |-
+        A single SOVD fault entry.
+
+        Provenance: `faults/types.yaml#Fault`.
+
+        `code` and `fault_name` are required by the spec. Every other field is
+        optional and may be omitted by the entity.
+      required:
+      - code
+      - fault_name
+      properties:
+        code:
+          type: string
+          description: Native fault code, e.g. `"0012E3"`, `"P102"`, `"modelMissing"`.
+        display_code:
+          type:
+          - string
+          - 'null'
+          description: Display representation of `code`, e.g. `"P102"`.
+        fault_name:
+          type: string
+          description: Human-readable fault name.
+        fault_translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `fault_name`.
+        scope:
+          type:
+          - string
+          - 'null'
+          description: Scope of the fault (e.g. user-defined fault memory). Capability-defined.
+        severity:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: 'Severity. Spec convention: `1=FATAL, 2=ERROR, 3=WARN, 4=INFO`.'
+        status:
+          description: |-
+            OEM-specific status key/value object. For classic ECUs typically
+            includes the UDS DTC status-byte bits.
+        symptom:
+          type:
+          - string
+          - 'null'
+          description: OEM-specific symptom / failure-mode description.
+        symptom_translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `symptom`.
+        tags:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Tags attached to this fault entry.
+    FaultDetails:
+      type: object
+      description: |-
+        Response body for `GET /{entity-collection}/{entity-id}/faults/{fault-code}`.
+
+        Provenance: `faults/responses.yaml#FaultDetails` (inline schema — the
+        spec does not give it a name in `components/schemas`, so we coin one).
+      required:
+      - item
+      properties:
+        environment_data:
+          description: OEM-specific environment / freeze-frame data.
+        errors:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/DataError'
+          description: Errors related to `environment_data`, if any.
+        item:
+          $ref: '#/components/schemas/Fault'
+          description: The fault entry itself.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+    FaultFilter:
+      type: object
+      description: |-
+        Filter applied to `GET .../faults`.
+
+        Provenance: combined view of `faults/parameters.yaml` query parameters.
+
+        The spec allows three independent filters:
+        - `status[key]` (repeated query parameter; entries are OR-combined)
+        - `severity` (integer; matches faults strictly below the given level)
+        - `scope` (string; one of the entity-supported scopes)
+
+        We model it as a struct rather than a flat tuple so that future additions
+        (e.g. a future `from_timestamp` parameter) do not break call sites.
+      properties:
+        scope:
+          type:
+          - string
+          - 'null'
+          description: Scope (capability-defined string).
+        severity:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Severity threshold. A fault matches if `fault.severity < severity`.
+        status_keys:
+          type: array
+          items:
+            type: array
+            items: false
+            prefixItems:
+            - type: string
+            - type: string
+          description: |-
+            Status-key matches. Each entry is `(key, value)`. Entries are
+            OR-combined: a fault matches if **any** entry matches its status
+            object.
+    GenericError:
+      type: object
+      description: |-
+        SOVD generic error envelope.
+
+        Provenance: `commons/errors.yaml#GenericError`.
+
+        Returned in the body of any non-2xx SOVD response. The `error_code` is
+        a SOVD-standardised code; `vendor_code` is filled when the error is
+        vendor-specific. `parameters` carries open key/value detail.
+      required:
+      - error_code
+      - message
+      properties:
+        error_code:
+          type: string
+          description: SOVD standardised error code.
+        message:
+          type: string
+          description: Human-readable problem description.
+        parameters:
+          description: Additional key/value detail about the error.
+        translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `message`.
+        vendor_code:
+          type:
+          - string
+          - 'null'
+          description: Vendor-specific error code, set when `error_code` is vendor-specific.
+    HealthStatus:
+      type: object
+      description: |-
+        Envelope returned by `GET /sovd/v1/health`.
+
+        Extra (per ADR-0006): fields beyond `status` / `version` are
+        Taktflow extensions. The shape is stable across the Phase 4 Line A
+        surface and is documented in the generated OpenAPI yaml.
+      required:
+      - status
+      - version
+      - sovd_db
+      - fault_sink
+      properties:
+        fault_sink:
+          $ref: '#/components/schemas/BackendHealth'
+          description: Result of probing the ingestion-side fault sink.
+        operation_cycle:
+          type:
+          - string
+          - 'null'
+          description: |-
+            Name of the currently active operation cycle, if any.
+            `None` means the cycle driver is in [`Idle`](crate::traits::operation_cycle::OperationCycleEvent::Idle).
+        sovd_db:
+          $ref: '#/components/schemas/BackendHealth'
+          description: Result of probing the persistence backend.
+        status:
+          type: string
+          description: |-
+            Top-level liveness status. Always `"ok"` when the server is
+            answering HTTP; backend-specific failures are reported in the
+            `sovd_db` / `fault_sink` / `operation_cycle` probes below.
+        version:
+          type: string
+          description: Crate version reported from `env!("CARGO_PKG_VERSION")`.
+    ListOfFaults:
+      type: object
+      description: |-
+        Response body for `GET /{entity-collection}/{entity-id}/faults`.
+
+        Provenance: `faults/types.yaml#ListOfFaults`.
+
+        `schema` is only present if the request was made with
+        `?include-schema=true`; we carry it as an opaque JSON value to avoid
+        modelling the full `OpenAPI` 3.1 meta-schema.
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fault'
+          description: All faults that match the request filter.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+    OperationDescription:
+      type: object
+      description: |-
+        Description of one operation defined for an entity.
+
+        Provenance: `operations/types.yaml#OperationDescription`.
+      required:
+      - id
+      - proximity_proof_required
+      - asynchronous_execution
+      properties:
+        asynchronous_execution:
+          type: boolean
+          description: True if the operation runs asynchronously (POST returns 202).
+        id:
+          type: string
+          description: Stable identifier for this operation.
+        name:
+          type:
+          - string
+          - 'null'
+          description: Human-readable name.
+        proximity_proof_required:
+          type: boolean
+          description: True if the operation requires a fresh proof of physical proximity.
+        tags:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Tags attached to this operation.
+        translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `name`.
+    OperationDetails:
+      type: object
+      description: |-
+        Response body for `GET .../operations/{operation-id}`.
+
+        Provenance: `operations/responses.yaml#OperationDetails` (inline schema).
+      required:
+      - item
+      properties:
+        item:
+          $ref: '#/components/schemas/OperationDescription'
+          description: Description of the operation.
+        modes:
+          description: |-
+            Modes the entity must be in for this operation to execute. Open
+            `object` per spec — we carry it as `serde_json::Value`.
+        proximity_challenge:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ProximityChallenge'
+            description: Proximity challenge, present only if `item.proximity_proof_required`.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+    OperationsList:
+      type: object
+      description: |-
+        Response body for `GET /{entity-collection}/{entity-id}/operations`.
+
+        Provenance: `operations/responses.yaml#Operations` (inline schema).
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationDescription'
+          description: All operations defined for the entity.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+    ProximityChallenge:
+      type: object
+      description: |-
+        Proximity-challenge envelope, used by operations that require fresh
+        physical-proximity proof.
+
+        Provenance: `commons/types.yaml#ProximityChallenge`.
+      required:
+      - challenge
+      - valid_until
+      properties:
+        challenge:
+          type: string
+          description: Challenge string the SOVD client must solve.
+        valid_until:
+          type: string
+          description: |-
+            Absolute UTC timestamp at which the challenge expires.
+            (RFC 3339 / ISO 8601 string.)
+    Severity:
+      type: string
+      description: |-
+        SOVD severity levels for log-style values.
+
+        Provenance: `commons/types.yaml#Severity`.
+      enum:
+      - fatal
+      - error
+      - warn
+      - info
+      - debug
+    SovdListOfValues:
+      type: object
+      description: |-
+        Response body for `GET .../data-lists/{data-list-id}`.
+
+        Provenance: `commons/types.yaml#ListOfValues`. Rust-named
+        `SovdListOfValues` for the same reason as [`SovdValue`].
+      properties:
+        items:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/SovdValue'
+          description: All values returned in this read batch.
+    SovdReadValue:
+      type: object
+      description: |-
+        Single-value read result returned from `GET .../data/{data-id}`.
+
+        Provenance: `commons/types.yaml#ReadValue`. Rust-named
+        `SovdReadValue` for the same reason as [`SovdValue`].
+      required:
+      - id
+      - data
+      properties:
+        data:
+          description: Decoded value payload (`AnyValue` per spec — open).
+        errors:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/DataError'
+          description: Errors encountered while reading parts of `data`.
+        id:
+          type: string
+          description: Stable identifier for the value.
+        schema:
+          description: Optional embedded JSON Schema describing the response shape.
+    SovdValue:
+      type: object
+      description: |-
+        One read result from the SOVD `data` endpoint.
+
+        Provenance: `commons/types.yaml#Value`.
+
+        # Rust-name vs. spec-name (Phase 4 D3)
+
+        The SOVD spec names this type `Value`. At the Rust level we call
+        it `SovdValue` so the `utoipa` 5.4 `components(schemas(...))`
+        derive can register it — utoipa 5.4 fails with "proc-macro derive
+        produced unparsable tokens" when a schema named `Value` is
+        registered at the top of the components list (an internal short-
+        name alias clash, see `docs/openapi-audit-2026-04-14.md`). The
+        wire shape is unchanged.
+
+        A legacy `pub type Value = SovdValue;` alias is exported so the
+        Phase 3 module path `sovd_interfaces::spec::data::Value` still
+        resolves; it is used in fault filters and the operations layer.
+      required:
+      - id
+      - data
+      properties:
+        data:
+          description: Retrieved value payload (open `object` per spec).
+        error:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/DataError'
+            description: Per-value error (only set if reading this single value failed).
+        id:
+          type: string
+          description: Stable identifier for the value.
+        metadata:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ValueMetadata'
+            description: Metadata describing the value.
+    StartExecutionAsyncResponse:
+      type: object
+      description: |-
+        202 response body for an asynchronous execution start.
+
+        Provenance: `operations/responses.yaml#StartExecutionAsynchronous`
+        (inline schema). The `Location` HTTP header is carried separately by
+        the transport layer.
+      required:
+      - id
+      properties:
+        id:
+          type: string
+          description: Identifier for tracking the execution.
+        status:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ExecutionStatus'
+            description: Initial status, normally `Running`.
+    StartExecutionRequest:
+      type: object
+      description: |-
+        Request body for `POST .../operations/{operation-id}/executions`.
+
+        Provenance: `operations/requests.yaml#StartExecution` (inline schema).
+      properties:
+        parameters:
+          description: Operation parameters. Open `AnyValue` per spec.
+        proximity_response:
+          type:
+          - string
+          - 'null'
+          description: Response to the proximity challenge, if one was issued.
+        timeout:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          description: Server-side timeout in seconds before the execution is auto-stopped.
+    StartExecutionSyncResponse:
+      type: object
+      description: |-
+        200 response body for a synchronous execution start.
+
+        Provenance: `operations/responses.yaml#StartExecutionSynchronous`
+        (inline schema).
+      properties:
+        error:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/GenericError'
+            description: Error, if the operation failed.
+        parameters:
+          description: Operation response parameters. Open `object` per spec.
+    ValueGroup:
+      type: object
+      description: |-
+        Description of one value group.
+
+        Provenance: `data/types.yaml#ValueGroup`.
+      required:
+      - id
+      - category
+      properties:
+        category:
+          type: string
+          description: Category the group is defined for.
+        category_translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `category`.
+        group:
+          type:
+          - string
+          - 'null'
+          description: Display name of the group.
+        group_translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `group`.
+        id:
+          type: string
+          description: Stable identifier for the group, unique across all categories.
+        tags:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Tags attached to the group.
+    ValueMetadata:
+      type: object
+      description: |-
+        Metadata describing a data value.
+
+        Provenance: `commons/types.yaml#ValueMetadata`.
+      required:
+      - id
+      - name
+      - category
+      properties:
+        category:
+          type: string
+          description: |-
+            Category, e.g. `currentData`, `identData`, `sysInfo`, or
+            `x-<oem>-…`. The spec restricts the string to URL-safe characters
+            matching `^[A-Za-z0-9_-]+$`; we do not enforce that at type level.
+        groups:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Group identifiers the value belongs to.
+        id:
+          type: string
+          description: Stable identifier for the value (e.g. `"DriverWindow"`).
+        name:
+          type: string
+          description: Human-readable name.
+        tags:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Tags attached to this value.
+        translation_id:
+          type:
+          - string
+          - 'null'
+          description: Identifier for translating `name`.
+tags:
+- name: discovery
+  description: Entity discovery endpoints
+- name: fault-handling
+  description: Fault list/detail/clear endpoints
+- name: operations-control
+  description: Operation execution endpoints
+- name: data-access
+  description: Data resource access endpoints
