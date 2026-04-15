@@ -236,6 +236,70 @@ mod tests {
         assert!(f.scope.is_none());
     }
 
+    // D2-red: ADR-0018 rules 1 and 4 require every soft-fail response
+    // to carry a `stale: true` marker the tester can key off. Rather
+    // than invent a third wire shape, we attach an optional
+    // `ResponseExtras` blob to `ListOfFaults` and `FaultDetails` so
+    // the spec-nominal shape is unchanged but the degraded path can
+    // still advertise itself.
+    #[test]
+    fn list_of_faults_accepts_extras_stale_flag() {
+        let list = ListOfFaults {
+            items: Vec::new(),
+            schema: None,
+            extras: Some(crate::extras::response::ResponseExtras {
+                stale: true,
+                age_ms: Some(7_500),
+                host_unreachable: None,
+            }),
+        };
+        let json = serde_json::to_string(&list).expect("serialize");
+        assert!(json.contains("\"stale\":true"));
+        assert!(json.contains("\"age_ms\":7500"));
+        let back: ListOfFaults = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(back.extras.as_ref().map(|e| e.stale), Some(true));
+    }
+
+    #[test]
+    fn fault_details_accepts_extras_stale_flag() {
+        let details = FaultDetails {
+            item: sample_fault(),
+            environment_data: None,
+            errors: None,
+            schema: None,
+            extras: Some(crate::extras::response::ResponseExtras {
+                stale: true,
+                age_ms: Some(42),
+                host_unreachable: None,
+            }),
+        };
+        let json = serde_json::to_string(&details).expect("serialize");
+        assert!(json.contains("\"stale\":true"));
+        let back: FaultDetails = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(
+            back.extras.as_ref().and_then(|e| e.age_ms),
+            Some(42),
+            "age_ms lost round trip"
+        );
+    }
+
+    #[test]
+    fn list_of_faults_without_extras_does_not_emit_field() {
+        // Nominal shape stays spec-pure: extras is #[skip_serializing_if]
+        // so a non-degraded response matches the ISO 17978-3 schema
+        // exactly.
+        let list = ListOfFaults {
+            items: Vec::new(),
+            schema: None,
+            extras: None,
+        };
+        let json = serde_json::to_string(&list).expect("serialize");
+        assert!(
+            !json.contains("extras"),
+            "extras field must not leak on nominal path: {json}"
+        );
+    }
+
     #[test]
     fn fault_filter_round_trip() {
         let filter = FaultFilter {
