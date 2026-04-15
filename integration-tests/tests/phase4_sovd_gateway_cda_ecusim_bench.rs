@@ -41,7 +41,7 @@ use reqwest::StatusCode;
 use sovd_db_sqlite::SqliteSovdDb;
 use sovd_dfm::Dfm;
 use sovd_interfaces::{
-    ComponentId,
+    ComponentId, SovdError,
     extras::fault::{FaultId, FaultRecord, FaultSeverity},
     spec::{component::DiscoveredEntities, fault::ListOfFaults},
     traits::{fault_sink::FaultSink, operation_cycle::OperationCycle, sovd_db::SovdDb},
@@ -54,10 +54,13 @@ const PI_DOIP_ADDR: &str = "192.168.0.197:13400";
 const CDA_BASE_URL: &str = "http://127.0.0.1:20002/";
 const BENCH_ENV: &str = "TAKTFLOW_BENCH";
 
-/// CDA-served component used for the bench — this is the upstream
-/// `ecu-sim` entity id. We avoid hardcoding a Taktflow-specific id so
-/// the test runs against any deployment of the upstream CDA.
-const CDA_COMPONENT: &str = "ecu-sim";
+/// CDA-served component used for the bench. Matches the primary
+/// entity exposed by the upstream ecu-sim's compiled MDD fixtures
+/// (`FLXC1000.mdd`) — see `deploy/sil/opensovd-cda.toml`. When CDA is
+/// running against that MDD database, `/vehicle/v15/components`
+/// advertises `flxc1000` and `flxcng1000`; we pick `flxc1000` so the
+/// CdaBackend forward hits a real route on the downstream.
+const CDA_COMPONENT: &str = "flxc1000";
 const DFM_COMPONENT: &str = "dfm";
 
 async fn bench_reachable() -> bool {
@@ -85,26 +88,37 @@ async fn bench_reachable() -> bool {
             return false;
         }
     }
-    // Best-effort probe of CDA itself.
-    let client = reqwest::Client::new();
-    match tokio::time::timeout(
-        Duration::from_secs(2),
-        client
-            .get(format!("{CDA_BASE_URL}vehicle/v15/components"))
-            .send(),
-    )
-    .await
-    {
-        Ok(Ok(r)) if r.status().is_success() || r.status() == StatusCode::UNAUTHORIZED => true,
-        Ok(Ok(r)) => {
+    // Best-effort probe of CDA itself — use a throwaway CdaBackend
+    // configured with the DEFAULT_CDA_PATH_PREFIX (vehicle/v15) and
+    // call preflight(). This catches "CDA is up but serving a
+    // different REST root than CdaBackend expects" before we ever
+    // boot the harness.
+    let probe_backend = match CdaBackend::new(
+        ComponentId::new(CDA_COMPONENT),
+        Url::parse(CDA_BASE_URL).expect("parse cda url"),
+    ) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("skipping phase4 full-chain bench: cannot build probe CdaBackend: {e}");
+            return false;
+        }
+    };
+    match tokio::time::timeout(Duration::from_secs(2), probe_backend.preflight()).await {
+        Ok(Ok(())) => {
             eprintln!(
-                "skipping phase4 full-chain bench: CDA {CDA_BASE_URL} returned {}",
-                r.status()
+                "phase4 full-chain bench preflight ok: {CDA_BASE_URL} + path_prefix={:?}",
+                probe_backend.path_prefix()
             );
-            false
+            true
+        }
+        Ok(Err(SovdError::InvalidRequest(msg))) => {
+            // Prefix mismatch. This is the very bug the D3 guard
+            // exists to catch — surface it loudly rather than
+            // silently skipping the test.
+            panic!("phase4 full-chain bench preflight FAILED: {msg}");
         }
         Ok(Err(e)) => {
-            eprintln!("skipping phase4 full-chain bench: CDA {CDA_BASE_URL} not reachable: {e}");
+            eprintln!("skipping phase4 full-chain bench: CDA preflight error: {e}");
             false
         }
         Err(_) => {
