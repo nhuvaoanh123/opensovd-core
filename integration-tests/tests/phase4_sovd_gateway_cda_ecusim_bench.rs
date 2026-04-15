@@ -54,10 +54,13 @@ const PI_DOIP_ADDR: &str = "192.168.0.197:13400";
 const CDA_BASE_URL: &str = "http://127.0.0.1:20002/";
 const BENCH_ENV: &str = "TAKTFLOW_BENCH";
 
-/// CDA-served component used for the bench — this is the upstream
-/// `ecu-sim` entity id. We avoid hardcoding a Taktflow-specific id so
-/// the test runs against any deployment of the upstream CDA.
-const CDA_COMPONENT: &str = "ecu-sim";
+/// CDA-served component used for the bench. Matches the primary
+/// entity exposed by the upstream ecu-sim's compiled MDD fixtures
+/// (`FLXC1000.mdd`) — see `deploy/sil/opensovd-cda.toml`. When CDA is
+/// running against that MDD database, `/vehicle/v15/components`
+/// advertises `flxc1000` and `flxcng1000`; we pick `flxc1000` so the
+/// CdaBackend forward hits a real route on the downstream.
+const CDA_COMPONENT: &str = "flxc1000";
 const DFM_COMPONENT: &str = "dfm";
 
 async fn bench_reachable() -> bool {
