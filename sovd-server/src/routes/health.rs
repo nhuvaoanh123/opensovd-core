@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! `GET /sovd/v1/health` — SOVD liveness + backend probe (Phase 4 D4).
 //!
 //! Returns a [`HealthStatus`] extras envelope describing the top-level

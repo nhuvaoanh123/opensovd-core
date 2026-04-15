@@ -10,7 +10,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
-#![allow(clippy::doc_markdown)]
+#![allow(clippy::doc_markdown, clippy::unnested_or_patterns)]
 
 //! Phase 4 Line A — SOVD server real backends integration tests.
 //!

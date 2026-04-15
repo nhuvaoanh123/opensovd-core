@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Phase 4 Line A D8 — end-to-end DFM-only chain.
 //!
 //! Boots the full axum router with an `InMemoryServer` + a DFM
@@ -40,8 +42,8 @@ use sovd_interfaces::{
         data::Datas,
         fault::{FaultDetails, ListOfFaults},
         operation::{
-            ExecutionStatus, ExecutionStatusResponse, OperationsList,
-            StartExecutionAsyncResponse, StartExecutionRequest,
+            ExecutionStatus, ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse,
+            StartExecutionRequest,
         },
     },
     traits::{fault_sink::FaultSink, operation_cycle::OperationCycle, sovd_db::SovdDb},
@@ -62,8 +64,7 @@ impl Harness {
     async fn start() -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
         let db_path = tmp.path().join("phase4_d8.db");
-        let db: Arc<dyn SovdDb> =
-            Arc::new(SqliteSovdDb::connect(&db_path).await.expect("sqlite"));
+        let db: Arc<dyn SovdDb> = Arc::new(SqliteSovdDb::connect(&db_path).await.expect("sqlite"));
         let cycles: Arc<dyn OperationCycle> = Arc::new(TaktflowOperationCycle::new());
 
         let operations = vec![
@@ -177,7 +178,7 @@ async fn phase4_sovd_dfm_only_chain_five_mvp_use_cases() {
     assert!(ids.iter().any(|id| id == COMPONENT), "dfm in {ids:?}");
 
     // Ingest three faults via the FaultSink trait.
-    for offset in [0x0A_u32, 0x0B, 0x0C] {
+    for offset in [0x0Au32, 0x0B, 0x0C] {
         harness
             .dfm
             .record_fault(fault(offset, FaultSeverity::Error).into())

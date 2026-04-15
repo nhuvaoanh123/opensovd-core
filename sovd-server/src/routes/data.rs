@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Data endpoints — `/sovd/v1/components/{id}/data`.
 //!
 //! Mirrors the spec path table `data/data.yaml` (see

@@ -159,6 +159,7 @@ impl std::fmt::Debug for LocalHost {
         f.debug_struct("LocalHost")
             .field("name", &self.name)
             .field("components", &self.backends.keys().collect::<Vec<_>>())
+            .field("component_order", &self.component_order)
             .finish()
     }
 }
@@ -170,10 +171,7 @@ impl LocalHost {
     ///
     /// Returns [`SovdError::InvalidRequest`] if two backends share a
     /// component id.
-    pub fn new(
-        name: impl Into<String>,
-        backends: Vec<Arc<dyn SovdBackend>>,
-    ) -> Result<Self> {
+    pub fn new(name: impl Into<String>, backends: Vec<Arc<dyn SovdBackend>>) -> Result<Self> {
         let mut map: HashMap<ComponentId, Arc<dyn SovdBackend>> = HashMap::new();
         let mut order = Vec::new();
         for backend in backends {
@@ -315,7 +313,10 @@ impl Gateway {
         let new_index = self.hosts.len();
         for component in host.components() {
             if let Some(&existing) = self.route_table.get(&component) {
-                let existing_name = self.hosts[existing].name().to_owned();
+                let existing_name = self
+                    .hosts
+                    .get(existing)
+                    .map_or_else(|| "<unknown>".to_owned(), |h| h.name().to_owned());
                 return Err(SovdError::InvalidRequest(format!(
                     "Gateway: component \"{component}\" already served by host \"{existing_name}\""
                 )));
@@ -365,11 +366,7 @@ impl Gateway {
     /// # Errors
     ///
     /// See [`list_faults`](Self::list_faults).
-    pub async fn get_fault(
-        &self,
-        component: &ComponentId,
-        code: &str,
-    ) -> Result<FaultDetails> {
+    pub async fn get_fault(&self, component: &ComponentId, code: &str) -> Result<FaultDetails> {
         self.route(component)?.get_fault(component, code).await
     }
 
@@ -509,8 +506,8 @@ impl GatewayConfig {
     /// uses unknown keys, or has an internal inconsistency such as a
     /// remote host without an `address`.
     pub fn from_toml_str(s: &str) -> Result<Self> {
-        let parsed: Self =
-            toml::from_str(s).map_err(|e| SovdError::InvalidRequest(format!("gateway TOML: {e}")))?;
+        let parsed: Self = toml::from_str(s)
+            .map_err(|e| SovdError::InvalidRequest(format!("gateway TOML: {e}")))?;
         parsed.validate()?;
         Ok(parsed)
     }
@@ -640,11 +637,8 @@ mod tests {
 
     #[tokio::test]
     async fn local_host_rejects_duplicate_components() {
-        let err = LocalHost::new(
-            "dup",
-            vec![mock_backend("dfm"), mock_backend("dfm")],
-        )
-        .unwrap_err();
+        let err =
+            LocalHost::new("dup", vec![mock_backend("dfm"), mock_backend("dfm")]).unwrap_err();
         assert!(matches!(err, SovdError::InvalidRequest(_)), "{err:?}");
     }
 
@@ -738,8 +732,8 @@ mod tests {
         "#;
         let cfg = GatewayConfig::from_toml_str(toml).expect("parse");
         assert_eq!(cfg.hosts.len(), 2);
-        assert_eq!(cfg.hosts[0].kind, HostKind::Local);
-        assert_eq!(cfg.hosts[1].kind, HostKind::Remote);
+        assert_eq!(cfg.hosts.first().unwrap().kind, HostKind::Local);
+        assert_eq!(cfg.hosts.get(1).unwrap().kind, HostKind::Remote);
     }
 
     #[test]

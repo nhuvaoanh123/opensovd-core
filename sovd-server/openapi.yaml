@@ -889,7 +889,7 @@ components:
 
         Extra (per ADR-0006): fields beyond `status` / `version` are
         Taktflow extensions. The shape is stable across the Phase 4 Line A
-        surface and is documented in the generated OpenAPI yaml.
+        surface and is documented in the generated `OpenAPI` yaml.
       required:
       - status
       - version

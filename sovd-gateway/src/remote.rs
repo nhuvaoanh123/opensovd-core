@@ -315,7 +315,7 @@ mod tests {
         Json, Router,
         extract::Path,
         http::StatusCode as AxumStatus,
-        routing::{delete, get, post},
+        routing::{get, post},
     };
     use sovd_interfaces::spec::{
         component::EntityCapabilities,
@@ -338,10 +338,7 @@ mod tests {
     #[test]
     fn ensure_trailing_slash_appends_when_missing() {
         let url = Url::parse("http://x/y").unwrap();
-        assert_eq!(
-            ensure_trailing_slash(url).as_str(),
-            "http://x/y/"
-        );
+        assert_eq!(ensure_trailing_slash(url).as_str(), "http://x/y/");
     }
 
     #[test]
@@ -538,7 +535,7 @@ mod tests {
             .await
             .expect("list faults");
         assert_eq!(list.items.len(), 1);
-        assert_eq!(list.items[0].code, "P0A1F");
+        assert_eq!(list.items.first().unwrap().code, "P0A1F");
         handle.abort();
     }
 
@@ -573,7 +570,7 @@ mod tests {
             .await
             .expect("list ops");
         assert_eq!(ops.items.len(), 1);
-        assert_eq!(ops.items[0].id, "mock_op");
+        assert_eq!(ops.items.first().unwrap().id, "mock_op");
         handle.abort();
     }
 
@@ -647,12 +644,8 @@ mod tests {
     #[test]
     fn remote_host_with_client_preserves_base_url() {
         let client = reqwest::Client::new();
-        let host = RemoteHost::with_client(
-            "wc",
-            Url::parse("http://example").unwrap(),
-            vec![],
-            client,
-        );
+        let host =
+            RemoteHost::with_client("wc", Url::parse("http://example").unwrap(), vec![], client);
         assert_eq!(host.base_url.as_str(), "http://example/");
     }
 }

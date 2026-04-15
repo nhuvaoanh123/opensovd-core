@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Health-report extras for `GET /sovd/v1/health`.
 //!
 //! Extra (per ADR-0006): ISO 17978-3 does not standardise a health
@@ -35,7 +37,7 @@ pub type BackendProbe = BackendHealth;
 ///
 /// Extra (per ADR-0006): fields beyond `status` / `version` are
 /// Taktflow extensions. The shape is stable across the Phase 4 Line A
-/// surface and is documented in the generated OpenAPI yaml.
+/// surface and is documented in the generated `OpenAPI` yaml.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct HealthStatus {
     /// Top-level liveness status. Always `"ok"` when the server is

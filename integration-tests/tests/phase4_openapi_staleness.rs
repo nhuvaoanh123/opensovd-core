@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Phase 4 Line A — OpenAPI staleness gate (D6).
 //!
 //! Fails whenever the committed `sovd-server/openapi.yaml` does not

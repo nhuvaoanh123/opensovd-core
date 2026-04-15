@@ -35,8 +35,7 @@ use crate::spec::{
     data::Datas,
     fault::{FaultDetails, FaultFilter, ListOfFaults},
     operation::{
-        ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse,
-        StartExecutionRequest,
+        ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
     },
 };
 use crate::types::{component::ComponentId, error::Result, error::SovdError};

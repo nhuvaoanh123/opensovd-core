@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Phase 4 Line A D9 — full-chain SOVD → Gateway → {DFM, CDA} → Pi ecu-sim bench.
 //!
 //! Boots the Phase 4 `sovd-server` router in-process with two forward
@@ -41,10 +43,7 @@ use sovd_dfm::Dfm;
 use sovd_interfaces::{
     ComponentId,
     extras::fault::{FaultId, FaultRecord, FaultSeverity},
-    spec::{
-        component::DiscoveredEntities,
-        fault::ListOfFaults,
-    },
+    spec::{component::DiscoveredEntities, fault::ListOfFaults},
     traits::{fault_sink::FaultSink, operation_cycle::OperationCycle, sovd_db::SovdDb},
 };
 use sovd_server::{CdaBackend, InMemoryServer, routes};
@@ -90,7 +89,9 @@ async fn bench_reachable() -> bool {
     let client = reqwest::Client::new();
     match tokio::time::timeout(
         Duration::from_secs(2),
-        client.get(format!("{CDA_BASE_URL}vehicle/v15/components")).send(),
+        client
+            .get(format!("{CDA_BASE_URL}vehicle/v15/components"))
+            .send(),
     )
     .await
     {
@@ -124,8 +125,7 @@ impl BenchHarness {
     async fn start() -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
         let db_path = tmp.path().join("phase4_d9_bench.db");
-        let db: Arc<dyn SovdDb> =
-            Arc::new(SqliteSovdDb::connect(&db_path).await.expect("sqlite"));
+        let db: Arc<dyn SovdDb> = Arc::new(SqliteSovdDb::connect(&db_path).await.expect("sqlite"));
         let cycles: Arc<dyn OperationCycle> = Arc::new(TaktflowOperationCycle::new());
         let dfm = Arc::new(
             Dfm::builder(ComponentId::new(DFM_COMPONENT))
@@ -261,7 +261,5 @@ async fn phase4_sovd_gateway_cda_ecusim_bench() {
     assert!(ids.iter().any(|id| id == DFM_COMPONENT));
     assert!(ids.iter().any(|id| id == CDA_COMPONENT));
 
-    eprintln!(
-        "phase4_sovd_gateway_cda_ecusim_bench: 5 MVP use cases green against {PI_DOIP_ADDR}"
-    );
+    eprintln!("phase4_sovd_gateway_cda_ecusim_bench: 5 MVP use cases green against {PI_DOIP_ADDR}");
 }

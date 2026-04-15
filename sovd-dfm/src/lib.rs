@@ -112,6 +112,7 @@ impl std::fmt::Debug for Dfm {
             .field("cycles", &"<dyn OperationCycle>")
             .field("operations", &self.operations.len())
             .field("data_catalog", &self.data_catalog.len())
+            .field("executions", &"<RwLock<HashMap>>")
             .finish()
     }
 }

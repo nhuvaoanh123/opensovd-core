@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Correlation-id middleware (Phase 4 Line A D5).
 //!
 //! Per ADR-0013, SOVD-Core accepts **both** `X-Request-Id` and
@@ -70,7 +72,10 @@ pub fn resolve_correlation_id(headers: &HeaderMap) -> String {
             return value.to_owned();
         }
     }
-    if let Some(value) = headers.get(TRACEPARENT_HEADER).and_then(|v| v.to_str().ok()) {
+    if let Some(value) = headers
+        .get(TRACEPARENT_HEADER)
+        .and_then(|v| v.to_str().ok())
+    {
         if let Some(trace_id) = parse_traceparent_trace_id(value) {
             return trace_id.to_owned();
         }
@@ -113,9 +118,8 @@ mod tests {
 
     #[test]
     fn parse_traceparent_happy_path() {
-        let id = parse_traceparent_trace_id(
-            "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
-        );
+        let id =
+            parse_traceparent_trace_id("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
         assert_eq!(id, Some("0af7651916cd43dd8448eb211c80319c"));
     }
 
@@ -132,9 +136,7 @@ mod tests {
         headers.insert(REQUEST_ID_HEADER, HeaderValue::from_static("my-req-id"));
         headers.insert(
             TRACEPARENT_HEADER,
-            HeaderValue::from_static(
-                "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
-            ),
+            HeaderValue::from_static("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
         );
         assert_eq!(resolve_correlation_id(&headers), "my-req-id");
     }
@@ -144,9 +146,7 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(
             TRACEPARENT_HEADER,
-            HeaderValue::from_static(
-                "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
-            ),
+            HeaderValue::from_static("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
         );
         assert_eq!(
             resolve_correlation_id(&headers),

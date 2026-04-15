@@ -133,7 +133,9 @@ pub async fn get_fault(
     // components can answer per-fault detail. See ADR-0015 §"backend
     // trait surface" for the extended `SovdBackend::get_fault` method.
     let component = ComponentId::new(component_id);
-    Ok(Json(server.dispatch_get_fault(&component, &fault_code).await?))
+    Ok(Json(
+        server.dispatch_get_fault(&component, &fault_code).await?,
+    ))
 }
 
 /// `DELETE /sovd/v1/components/{component_id}/faults` — clear every fault.

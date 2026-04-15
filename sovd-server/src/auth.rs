@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! Bearer-token authentication middleware (Phase 4 Line A D5).
 //!
 //! Per ADR-0009 the scaffolded auth model is bearer + mTLS. Phase 4

@@ -10,6 +10,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+#![allow(clippy::doc_markdown)]
+
 //! `cargo xtask` — workspace developer task runner.
 //!
 //! Currently only implements `openapi-dump`, which regenerates
