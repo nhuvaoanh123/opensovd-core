@@ -452,6 +452,105 @@ mod tests {
         assert!(list.items.is_empty());
     }
 
+    // D4-red: ADR-0018 rule 4 mandates that on a SovdDb error Dfm
+    // falls back to a last-known snapshot with a stale: true flag,
+    // NOT a propagated error. We simulate the failure path with a
+    // fake SovdDb that succeeds once, caches the snapshot through
+    // Dfm::list_faults, then fails, and expect the Dfm layer to
+    // serve the cache rather than bail.
+    //
+    // The fake needs interior mutability so the test can flip the
+    // fail flag between calls.
+    #[tokio::test]
+    async fn list_faults_falls_back_to_last_known_snapshot_on_db_error() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc as StdArc;
+        use sovd_interfaces::spec::fault::Fault;
+        use sovd_interfaces::traits::sovd_db::SovdDb;
+
+        struct FlakySovdDb {
+            fail: StdArc<AtomicBool>,
+        }
+
+        #[async_trait]
+        impl SovdDb for FlakySovdDb {
+            async fn ingest_fault(&self, _record: sovd_interfaces::extras::fault::FaultRecord) -> Result<()> {
+                Ok(())
+            }
+            async fn list_faults(&self, _filter: FaultFilter) -> Result<ListOfFaults> {
+                if self.fail.load(Ordering::SeqCst) {
+                    return Err(SovdError::Internal("simulated sqlite busy".into()));
+                }
+                Ok(ListOfFaults {
+                    items: vec![Fault {
+                        code: "CACHED_001".into(),
+                        scope: None,
+                        display_code: None,
+                        fault_name: "cached".into(),
+                        fault_translation_id: None,
+                        severity: Some(2),
+                        status: None,
+                        symptom: None,
+                        symptom_translation_id: None,
+                        tags: None,
+                    }],
+                    schema: None,
+                    extras: None,
+                })
+            }
+            async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
+                Err(SovdError::NotFound { entity: code.into() })
+            }
+            async fn clear_faults(&self, _filter: FaultFilter) -> Result<()> {
+                Ok(())
+            }
+            async fn clear_fault_by_code(&self, _code: &str) -> Result<()> {
+                Ok(())
+            }
+            async fn snapshot_for_operation_cycle(
+                &self,
+                _cycle_id: &sovd_interfaces::traits::sovd_db::OperationCycleId,
+            ) -> Result<()> {
+                Ok(())
+            }
+        }
+
+        let fail = StdArc::new(AtomicBool::new(false));
+        let db: Arc<dyn SovdDb> = Arc::new(FlakySovdDb {
+            fail: fail.clone(),
+        });
+        let cycles: Arc<dyn OperationCycle> = Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
+        let dfm = Dfm::builder(ComponentId::new("cvc"))
+            .with_db(db)
+            .with_cycles(cycles)
+            .build()
+            .expect("build");
+
+        // First call: warms the cache from a successful DB read.
+        let nominal = dfm.list_faults(FaultFilter::all()).await.expect("warm cache");
+        assert_eq!(nominal.items.len(), 1);
+        assert!(
+            nominal.extras.is_none(),
+            "nominal response must not carry stale marker"
+        );
+
+        // Flip the DB to error mode and try again — ADR-0018 rule 4
+        // requires the cached snapshot to be served with stale: true.
+        fail.store(true, Ordering::SeqCst);
+        let degraded = dfm
+            .list_faults(FaultFilter::all())
+            .await
+            .expect("should return cached snapshot, not error");
+        assert_eq!(degraded.items.len(), 1);
+        assert_eq!(degraded.items[0].code, "CACHED_001");
+        let extras = degraded.extras.expect("stale extras must be set");
+        assert!(extras.stale, "stale flag must be set on degraded response");
+        assert!(
+            extras.age_ms.is_some(),
+            "age_ms must be populated on stale cache response"
+        );
+    }
+
     #[tokio::test]
     async fn cycles_round_trip_through_dfm_cycles_accessor() {
         let dfm = build_dfm().await;
