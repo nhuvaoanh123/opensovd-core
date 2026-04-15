@@ -163,7 +163,10 @@ mod tests {
             ComponentId::new("fzc"),
         ]);
         let typed = e.host_unreachable_typed();
-        assert_eq!(typed, vec![ComponentId::new("cvc"), ComponentId::new("fzc")]);
+        assert_eq!(
+            typed,
+            vec![ComponentId::new("cvc"), ComponentId::new("fzc")]
+        );
         assert!(e.stale);
     }
 }

@@ -432,7 +432,10 @@ impl Gateway {
         let last_error: Option<String> = if unreachable.is_empty() || any_success {
             None
         } else {
-            Some(format!("all hosts unreachable ({} components)", unreachable.len()))
+            Some(format!(
+                "all hosts unreachable ({} components)",
+                unreachable.len()
+            ))
         };
         if !any_success && self.hosts.is_empty() {
             // Empty gateway is a valid configuration — return an empty
@@ -453,9 +456,7 @@ impl Gateway {
             None
         } else {
             unreachable.sort_by(|a, b| a.as_str().cmp(b.as_str()));
-            Some(sovd_interfaces::extras::response::ResponseExtras::host_unreachable(
-                unreachable,
-            ))
+            Some(sovd_interfaces::extras::response::ResponseExtras::host_unreachable(unreachable))
         };
         Ok(DiscoveredEntities { items, extras })
     }
@@ -764,7 +765,11 @@ mod tests {
                 component_id: component.clone(),
             })
         }
-        async fn get_fault(&self, component: &ComponentId, _code: &str) -> SovdResult<FaultDetails> {
+        async fn get_fault(
+            &self,
+            component: &ComponentId,
+            _code: &str,
+        ) -> SovdResult<FaultDetails> {
             Err(SovdError::HostUnreachable {
                 component_id: component.clone(),
             })

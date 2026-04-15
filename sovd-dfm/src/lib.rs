@@ -304,11 +304,8 @@ impl SovdBackend for Dfm {
             Err(err) => {
                 // Bounded read per ADR-0018 rule 3. Short-circuit to
                 // the original error on contention rather than hang.
-                let cache_guard = if let Ok(guard) = tokio::time::timeout(
-                    LOCK_BUDGET,
-                    self.last_known_faults.read(),
-                )
-                .await
+                let cache_guard = if let Ok(guard) =
+                    tokio::time::timeout(LOCK_BUDGET, self.last_known_faults.read()).await
                 {
                     Some(guard)
                 } else {
@@ -577,10 +574,10 @@ mod tests {
     // fail flag between calls.
     #[tokio::test]
     async fn list_faults_falls_back_to_last_known_snapshot_on_db_error() {
-        use std::sync::atomic::{AtomicBool, Ordering};
-        use std::sync::Arc as StdArc;
         use sovd_interfaces::spec::fault::Fault;
         use sovd_interfaces::traits::sovd_db::SovdDb;
+        use std::sync::Arc as StdArc;
+        use std::sync::atomic::{AtomicBool, Ordering};
 
         struct FlakySovdDb {
             fail: StdArc<AtomicBool>,
@@ -588,7 +585,10 @@ mod tests {
 
         #[async_trait]
         impl SovdDb for FlakySovdDb {
-            async fn ingest_fault(&self, _record: sovd_interfaces::extras::fault::FaultRecord) -> Result<()> {
+            async fn ingest_fault(
+                &self,
+                _record: sovd_interfaces::extras::fault::FaultRecord,
+            ) -> Result<()> {
                 Ok(())
             }
             async fn list_faults(&self, _filter: FaultFilter) -> Result<ListOfFaults> {
@@ -613,7 +613,9 @@ mod tests {
                 })
             }
             async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
-                Err(SovdError::NotFound { entity: code.into() })
+                Err(SovdError::NotFound {
+                    entity: code.into(),
+                })
             }
             async fn clear_faults(&self, _filter: FaultFilter) -> Result<()> {
                 Ok(())
@@ -633,7 +635,8 @@ mod tests {
         let db: Arc<dyn SovdDb> = Arc::new(FlakySovdDb {
             fail: StdArc::clone(&fail),
         });
-        let cycles: Arc<dyn OperationCycle> = Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
+        let cycles: Arc<dyn OperationCycle> =
+            Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
         let dfm = Dfm::builder(ComponentId::new("cvc"))
             .with_db(db)
             .with_cycles(cycles)
@@ -641,7 +644,10 @@ mod tests {
             .expect("build");
 
         // First call: warms the cache from a successful DB read.
-        let nominal = dfm.list_faults(FaultFilter::all()).await.expect("warm cache");
+        let nominal = dfm
+            .list_faults(FaultFilter::all())
+            .await
+            .expect("warm cache");
         assert_eq!(nominal.items.len(), 1);
         assert!(
             nominal.extras.is_none(),

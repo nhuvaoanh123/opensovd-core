@@ -375,9 +375,10 @@ impl SovdBackend for CdaBackend {
                 Ok(response) => {
                     let status = response.status();
                     if status.is_success() {
-                        return response.json::<ListOfFaults>().await.map_err(|e| {
-                            map_reqwest_err(&self.component_id, &e)
-                        });
+                        return response
+                            .json::<ListOfFaults>()
+                            .await
+                            .map_err(|e| map_reqwest_err(&self.component_id, &e));
                     }
                     last_status = Some(status);
                     if status.is_server_error()
@@ -586,14 +587,16 @@ mod tests {
     // We drive this via a hand-rolled axum mock that counts calls and
     // returns 503 N times before a 200 (or 503 forever).
 
-    use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc as StdArc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     async fn spin_up_flaky_cda(
         fail_times: u32,
     ) -> (Url, StdArc<AtomicU32>, tokio::task::JoinHandle<()>) {
         use axum::{
-            Json, Router, extract::State, http::StatusCode as AxumStatus,
+            Json, Router,
+            extract::State,
+            http::StatusCode as AxumStatus,
             response::{IntoResponse, Response},
             routing::get,
         };
@@ -656,8 +659,7 @@ mod tests {
         // absorb the first two failures and surface the eventual 200
         // as a normal ListOfFaults.
         let (base, calls, handle) = spin_up_flaky_cda(2).await;
-        let backend =
-            CdaBackend::new(ComponentId::new("cvc"), base).expect("construct backend");
+        let backend = CdaBackend::new(ComponentId::new("cvc"), base).expect("construct backend");
         let list = backend
             .list_faults(FaultFilter::all())
             .await
@@ -677,8 +679,7 @@ mod tests {
         // attempts (or 2 s budget) — on exhaustion we must see
         // SovdError::Degraded, NOT a raw Transport surfacing as a 5xx.
         let (base, calls, handle) = spin_up_flaky_cda(u32::MAX).await;
-        let backend =
-            CdaBackend::new(ComponentId::new("cvc"), base).expect("construct backend");
+        let backend = CdaBackend::new(ComponentId::new("cvc"), base).expect("construct backend");
         let err = backend
             .list_faults(FaultFilter::all())
             .await
@@ -686,7 +687,8 @@ mod tests {
         match err {
             SovdError::Degraded { ref reason } => {
                 assert!(
-                    reason.to_lowercase().contains("retry") || reason.to_lowercase().contains("budget"),
+                    reason.to_lowercase().contains("retry")
+                        || reason.to_lowercase().contains("budget"),
                     "expected degraded reason to mention retry/budget, got {reason:?}"
                 );
             }
