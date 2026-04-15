@@ -24,7 +24,7 @@
 
 use utoipa::OpenApi;
 
-use crate::routes::{components, faults, operations};
+use crate::routes::{components, data, faults, operations};
 
 /// Assembled `OpenAPI` document. Derive-built so the doc is in sync with
 /// the annotated handlers and `ToSchema` types at compile time.
@@ -40,6 +40,7 @@ use crate::routes::{components, faults, operations};
         operations::list_operations,
         operations::start_execution,
         operations::execution_status,
+        data::list_data,
     ),
     components(schemas(
         sovd_interfaces::spec::component::DiscoveredEntities,
@@ -67,23 +68,27 @@ use crate::routes::{components, faults, operations};
         sovd_interfaces::spec::data::DataCategoryInformation,
         sovd_interfaces::spec::data::ValueGroup,
         sovd_interfaces::spec::data::DataListEntry,
-        // `spec::data::Value`, `ListOfValues`, and `ReadValue` are
-        // deliberately omitted: their field layout includes an open
-        // `serde_json::Value` payload named `data`, which utoipa 5.4's
-        // `components(schemas(...))` derive rejects with "proc-macro
-        // derive produced unparsable tokens" (the `Value` short-name
-        // appears to clash with an internal alias). They still derive
-        // `ToSchema` at the type level and round-trip in
-        // `sovd-interfaces` unit tests; re-adding them is tracked as a
-        // follow-up for when we rename the struct or add an explicit
-        // `#[schema(as = ...)]` alias.
+        sovd_interfaces::spec::data::Datas,
+        // Phase 4 D3 — the three `Value`-family types now live under
+        // the `Sovd*` Rust names (`SovdValue` / `SovdListOfValues` /
+        // `SovdReadValue`) with `pub type Value = SovdValue;` legacy
+        // aliases preserving the Phase 3 module path. The rename
+        // sidesteps utoipa 5.4's "proc-macro derive produced
+        // unparsable tokens" failure that Phase 3 documented.
+        sovd_interfaces::spec::data::SovdValue,
+        sovd_interfaces::spec::data::SovdListOfValues,
+        sovd_interfaces::spec::data::SovdReadValue,
         sovd_interfaces::spec::error::GenericError,
         sovd_interfaces::spec::error::DataError,
+        // Phase 4 D4 — extras health envelope.
+        sovd_interfaces::extras::health::HealthStatus,
+        sovd_interfaces::traits::backend::BackendHealth,
     )),
     tags(
         (name = "discovery", description = "Entity discovery endpoints"),
         (name = "fault-handling", description = "Fault list/detail/clear endpoints"),
         (name = "operations-control", description = "Operation execution endpoints"),
+        (name = "data-access", description = "Data resource access endpoints"),
     )
 )]
 pub struct ApiDoc;

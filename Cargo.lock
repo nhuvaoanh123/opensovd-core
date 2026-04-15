@@ -2048,6 +2048,7 @@ dependencies = [
  "opcycle-score-lifecycle",
  "opcycle-taktflow",
  "serde",
+ "serde_json",
  "sovd-db-score",
  "sovd-db-sqlite",
  "sovd-interfaces",

@@ -28,7 +28,6 @@ use serde::Deserialize;
 use sovd_interfaces::{
     ComponentId,
     spec::fault::{FaultDetails, FaultFilter, ListOfFaults},
-    traits::server::SovdServer as _,
 };
 
 // Forward faults go through `InMemoryServer::dispatch_*` helpers so
@@ -130,15 +129,11 @@ pub async fn get_fault(
     State(server): State<Arc<InMemoryServer>>,
     Path((component_id, fault_code)): Path<(String, String)>,
 ) -> Result<Json<FaultDetails>, ApiError> {
-    // get_fault is not part of `SovdBackend`; if a forward exists for
-    // this component we do not have a per-fault getter in the backend
-    // contract yet, so we fall through to local state. Forward backends
-    // that need per-fault detail should expose `get_fault` in a future
-    // extension of `SovdBackend` (tracked in MASTER-PLAN Phase 3).
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
-    Ok(Json(view.get_fault(&fault_code).await?))
+    // Phase 4 D1: dispatch through the forward map so DFM-served
+    // components can answer per-fault detail. See ADR-0015 §"backend
+    // trait surface" for the extended `SovdBackend::get_fault` method.
+    let component = ComponentId::new(component_id);
+    Ok(Json(server.dispatch_get_fault(&component, &fault_code).await?))
 }
 
 /// `DELETE /sovd/v1/components/{component_id}/faults` — clear every fault.

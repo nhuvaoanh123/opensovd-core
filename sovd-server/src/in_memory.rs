@@ -44,14 +44,17 @@ use sovd_interfaces::{
     ComponentId, SovdError,
     spec::{
         component::{DiscoveredEntities, EntityCapabilities, EntityReference},
-        data::ReadValue,
+        data::{Datas, ReadValue, ValueMetadata},
         fault::{Fault, FaultDetails, FaultFilter, ListOfFaults},
         operation::{
             Capability, ExecutionStatus, ExecutionStatusResponse, OperationDescription,
             OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
         },
     },
-    traits::{backend::SovdBackend, server::SovdServer},
+    traits::{
+        backend::{BackendHealth, SovdBackend},
+        server::SovdServer,
+    },
     types::error::Result,
 };
 use tokio::sync::RwLock;
@@ -392,6 +395,127 @@ impl InMemoryServer {
         let view = self.component_server(component).await?;
         view.entity_capabilities().await
     }
+
+    /// Dispatch `get_fault` (per-fault detail).
+    ///
+    /// See [`dispatch_list_faults`](Self::dispatch_list_faults) for
+    /// routing semantics. Phase 4 routes this through the forward
+    /// backend if any — the Phase 3 tree fell through to the local
+    /// component view, which meant DFM-served components returned 404
+    /// from the per-fault detail endpoint.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`
+    /// or the code is unknown.
+    pub async fn dispatch_get_fault(
+        &self,
+        component: &ComponentId,
+        code: &str,
+    ) -> Result<FaultDetails> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.get_fault(code).await;
+        }
+        let view = self.component_server(component).await?;
+        view.get_fault(code).await
+    }
+
+    /// Dispatch `list_operations`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`.
+    pub async fn dispatch_list_operations(
+        &self,
+        component: &ComponentId,
+    ) -> Result<OperationsList> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.list_operations().await;
+        }
+        let view = self.component_server(component).await?;
+        view.list_operations().await
+    }
+
+    /// Dispatch `execution_status`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`
+    /// or the execution id is unknown.
+    pub async fn dispatch_execution_status(
+        &self,
+        component: &ComponentId,
+        operation_id: &str,
+        execution_id: &str,
+    ) -> Result<ExecutionStatusResponse> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.execution_status(operation_id, execution_id).await;
+        }
+        let view = self.component_server(component).await?;
+        view.execution_status(operation_id, execution_id).await
+    }
+
+    /// Dispatch `list_data` — `GET /components/{id}/data`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if no backend handles `component`.
+    pub async fn dispatch_list_data(&self, component: &ComponentId) -> Result<Datas> {
+        if let Some(backend) = self.forward(component).await {
+            return backend.list_data().await;
+        }
+        let view = self.component_server(component).await?;
+        view.list_data().await
+    }
+
+    /// Return the first currently active operation-cycle name
+    /// observed across registered forwards. Best-effort — used only
+    /// by `GET /sovd/v1/health` to report cycle state under the
+    /// `operation_cycle` field of the [`HealthStatus`] envelope.
+    ///
+    /// Returns `None` if no forward tracks a cycle or if every forward
+    /// is currently [`Idle`](sovd_interfaces::traits::operation_cycle::OperationCycleEvent::Idle).
+    pub async fn observe_cycle_name(&self) -> Option<String> {
+        let forwards = {
+            let guard = self.forwards.read().await;
+            guard.values().cloned().collect::<Vec<_>>()
+        };
+        for backend in forwards {
+            if let Some(name) = backend.current_operation_cycle().await {
+                return Some(name);
+            }
+        }
+        None
+    }
+
+    /// Fan out a health probe to every registered forward backend.
+    ///
+    /// Returns [`BackendHealth::Ok`] only if *every* forward reports
+    /// `Ok`; [`BackendHealth::Degraded`] if any forward is degraded
+    /// but none are unavailable; [`BackendHealth::Unavailable`] as
+    /// soon as any forward returns unavailable (short-circuit).
+    pub async fn probe_forwards(&self) -> BackendHealth {
+        let forwards = {
+            let guard = self.forwards.read().await;
+            guard.values().cloned().collect::<Vec<_>>()
+        };
+        let mut any_failure: Option<String> = None;
+        for backend in forwards {
+            match backend.health_probe().await {
+                BackendHealth::Ok => {}
+                BackendHealth::Degraded { reason } => {
+                    any_failure.get_or_insert(format!("degraded: {reason}"));
+                }
+                BackendHealth::Unavailable { reason } => {
+                    return BackendHealth::Unavailable { reason };
+                }
+            }
+        }
+        match any_failure {
+            Some(reason) => BackendHealth::Degraded { reason },
+            None => BackendHealth::Ok,
+        }
+    }
 }
 
 impl Default for InMemoryServer {
@@ -607,6 +731,43 @@ impl InMemoryComponentServer {
         self.with_state(|state| {
             Ok(OperationsList {
                 items: state.operations.clone(),
+                schema: None,
+            })
+        })
+        .await
+    }
+
+    /// Return the data-metadata catalog for this component,
+    /// synthesised from the in-memory demo store. Each data value
+    /// registered with the component becomes one [`ValueMetadata`]
+    /// entry. Categories are inferred as `"currentData"` for VIN-style
+    /// identifiers and `"currentData"` for everything else — this is
+    /// demo data, not a real data-catalog publishing pipeline.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::NotFound`] if the component disappeared
+    /// from the store between view creation and this call.
+    pub async fn list_data(&self) -> Result<Datas> {
+        self.with_state(|state| {
+            let items: Vec<ValueMetadata> = state
+                .data_values
+                .keys()
+                .map(|k| ValueMetadata {
+                    id: k.clone(),
+                    name: k.clone(),
+                    translation_id: None,
+                    category: if k == "vin" {
+                        "identData".to_owned()
+                    } else {
+                        "currentData".to_owned()
+                    },
+                    groups: None,
+                    tags: None,
+                })
+                .collect();
+            Ok(Datas {
+                items,
                 schema: None,
             })
         })

@@ -29,7 +29,6 @@ use sovd_interfaces::{
     spec::operation::{
         ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
     },
-    traits::server::SovdServer as _,
 };
 
 use crate::{InMemoryServer, routes::error::ApiError};
@@ -56,10 +55,8 @@ pub async fn list_operations(
     State(server): State<Arc<InMemoryServer>>,
     Path(component_id): Path<String>,
 ) -> Result<Json<OperationsList>, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
-    Ok(Json(view.list_operations().await?))
+    let component = ComponentId::new(component_id);
+    Ok(Json(server.dispatch_list_operations(&component).await?))
 }
 
 /// `POST /sovd/v1/components/{component_id}/operations/{operation_id}/executions`
@@ -125,10 +122,10 @@ pub async fn execution_status(
     State(server): State<Arc<InMemoryServer>>,
     Path((component_id, operation_id, execution_id)): Path<(String, String, String)>,
 ) -> Result<Json<ExecutionStatusResponse>, ApiError> {
-    let view = server
-        .component_server(&ComponentId::new(component_id))
-        .await?;
+    let component = ComponentId::new(component_id);
     Ok(Json(
-        view.execution_status(&operation_id, &execution_id).await?,
+        server
+            .dispatch_execution_status(&component, &operation_id, &execution_id)
+            .await?,
     ))
 }

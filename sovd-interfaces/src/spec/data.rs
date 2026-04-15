@@ -83,8 +83,22 @@ pub struct ValueMetadata {
 /// One read result from the SOVD `data` endpoint.
 ///
 /// Provenance: `commons/types.yaml#Value`.
+///
+/// # Rust-name vs. spec-name (Phase 4 D3)
+///
+/// The SOVD spec names this type `Value`. At the Rust level we call
+/// it `SovdValue` so the `utoipa` 5.4 `components(schemas(...))`
+/// derive can register it — utoipa 5.4 fails with "proc-macro derive
+/// produced unparsable tokens" when a schema named `Value` is
+/// registered at the top of the components list (an internal short-
+/// name alias clash, see `docs/openapi-audit-2026-04-14.md`). The
+/// wire shape is unchanged.
+///
+/// A legacy `pub type Value = SovdValue;` alias is exported so the
+/// Phase 3 module path `sovd_interfaces::spec::data::Value` still
+/// resolves; it is used in fault filters and the operations layer.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct Value {
+pub struct SovdValue {
     /// Stable identifier for the value.
     pub id: String,
 
@@ -100,21 +114,31 @@ pub struct Value {
     pub error: Option<DataError>,
 }
 
+/// Legacy alias preserving the Phase 3 module path
+/// `sovd_interfaces::spec::data::Value`.
+pub type Value = SovdValue;
+
 /// Response body for `GET .../data-lists/{data-list-id}`.
 ///
-/// Provenance: `commons/types.yaml#ListOfValues`.
+/// Provenance: `commons/types.yaml#ListOfValues`. Rust-named
+/// `SovdListOfValues` for the same reason as [`SovdValue`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct ListOfValues {
+pub struct SovdListOfValues {
     /// All values returned in this read batch.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<Value>>,
+    pub items: Option<Vec<SovdValue>>,
 }
+
+/// Legacy alias preserving the Phase 3 module path
+/// `sovd_interfaces::spec::data::ListOfValues`.
+pub type ListOfValues = SovdListOfValues;
 
 /// Single-value read result returned from `GET .../data/{data-id}`.
 ///
-/// Provenance: `commons/types.yaml#ReadValue`.
+/// Provenance: `commons/types.yaml#ReadValue`. Rust-named
+/// `SovdReadValue` for the same reason as [`SovdValue`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct ReadValue {
+pub struct SovdReadValue {
     /// Stable identifier for the value.
     pub id: String,
 
@@ -129,6 +153,10 @@ pub struct ReadValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<serde_json::Value>,
 }
+
+/// Legacy alias preserving the Phase 3 module path
+/// `sovd_interfaces::spec::data::ReadValue`.
+pub type ReadValue = SovdReadValue;
 
 /// Description of one supported data category.
 ///
