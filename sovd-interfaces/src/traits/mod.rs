@@ -20,4 +20,6 @@ pub mod backend;
 pub mod client;
 pub mod fault_sink;
 pub mod gateway;
+pub mod operation_cycle;
 pub mod server;
+pub mod sovd_db;

@@ -9,27 +9,29 @@
 # https://www.apache.org/licenses/LICENSE-2.0
 
 [package]
-name = "sovd-interfaces"
+name = "opcycle-score-lifecycle"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 homepage.workspace = true
 publish = false
-description = "Shared types, traits, and interfaces for the Eclipse OpenSOVD core stack"
+description = "S-CORE (score-lifecycle) stub backend for the OperationCycle trait. Feature-gated per ADR-0016."
 
 [lints]
 workspace = true
+
+[features]
+default = []
+score = []
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
+sovd-interfaces = { workspace = true }
 async-trait = { workspace = true }
-chrono = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
-utoipa = { workspace = true }
-uuid = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

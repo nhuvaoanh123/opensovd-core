@@ -53,9 +53,11 @@ pub mod types;
 pub use traits::{
     backend::{BackendKind, SovdBackend},
     client::SovdClient,
-    fault_sink::FaultSink,
+    fault_sink::{FaultRecordRef, FaultSink},
     gateway::SovdGateway,
+    operation_cycle::{CurrentCycle, CycleName, OperationCycle, OperationCycleEvent},
     server::SovdServer,
+    sovd_db::{OperationCycleId, SovdDb},
 };
 pub use types::{
     component::ComponentId,

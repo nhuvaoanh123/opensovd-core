@@ -9,14 +9,14 @@
 # https://www.apache.org/licenses/LICENSE-2.0
 
 [package]
-name = "sovd-interfaces"
+name = "opcycle-taktflow"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 homepage.workspace = true
 publish = false
-description = "Shared types, traits, and interfaces for the Eclipse OpenSOVD core stack"
+description = "In-process OperationCycle backend (tokio::sync::watch). Default standalone driver per ADR-0012 and ADR-0016."
 
 [lints]
 workspace = true
@@ -25,11 +25,10 @@ workspace = true
 path = "src/lib.rs"
 
 [dependencies]
+sovd-interfaces = { workspace = true }
 async-trait = { workspace = true }
-chrono = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-tokio = { workspace = true, features = ["sync"] }
-utoipa = { workspace = true }
-uuid = { workspace = true }
+tokio = { workspace = true, features = ["sync", "rt", "macros"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
