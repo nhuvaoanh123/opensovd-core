@@ -2079,11 +2079,14 @@ name = "sovd-gateway"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "reqwest",
  "serde",
  "sovd-interfaces",
  "thiserror",
  "tokio",
+ "toml 0.9.12+spec-1.1.0",
  "tracing",
+ "url",
 ]
 
 [[package]]

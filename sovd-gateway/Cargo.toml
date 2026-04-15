@@ -27,7 +27,13 @@ path = "src/lib.rs"
 [dependencies]
 sovd-interfaces = { workspace = true }
 async-trait = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+toml = { workspace = true }
 tracing = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
