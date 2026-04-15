@@ -36,6 +36,7 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Instant;
 
 use async_trait::async_trait;
 use sovd_interfaces::{
@@ -102,6 +103,23 @@ pub struct Dfm {
     /// router only touches executions via
     /// [`SovdBackend::start_execution`] / [`SovdBackend::execution_status`].
     executions: Arc<RwLock<HashMap<String, ExecutionRecord>>>,
+    /// ADR-0018 rule 4 last-known snapshot cache. Every successful
+    /// `list_faults` from the underlying `SovdDb` captures its
+    /// response here with a wall-clock timestamp. On a subsequent
+    /// `SovdDb` error we serve the cached snapshot with a
+    /// `stale: true` + `age_ms` marker rather than propagating the
+    /// error. An empty cache on the first-ever error surfaces the
+    /// original error, because there is nothing usable to fall
+    /// back to.
+    last_known_faults: Arc<RwLock<Option<LastKnownFaults>>>,
+}
+
+/// Last successful `SovdDb::list_faults` result, cached for the
+/// stale-fallback path per ADR-0018 rule 4.
+#[derive(Debug, Clone)]
+struct LastKnownFaults {
+    items: Vec<sovd_interfaces::spec::fault::Fault>,
+    captured_at: Instant,
 }
 
 impl std::fmt::Debug for Dfm {
@@ -217,6 +235,7 @@ impl DfmBuilder {
             operations: self.operations,
             data_catalog: self.data_catalog,
             executions: Arc::new(RwLock::new(HashMap::new())),
+            last_known_faults: Arc::new(RwLock::new(None)),
         })
     }
 }
@@ -243,7 +262,57 @@ impl SovdBackend for Dfm {
     }
 
     async fn list_faults(&self, filter: FaultFilter) -> Result<ListOfFaults> {
-        self.db.list_faults(filter).await
+        // ADR-0018 rule 4: on success, warm the last-known snapshot;
+        // on SovdDb error, try to serve the cached snapshot with a
+        // stale: true marker instead of propagating. Fall through to
+        // the original error only if the cache is empty.
+        match self.db.list_faults(filter).await {
+            Ok(list) => {
+                let mut cache = self.last_known_faults.write().await;
+                *cache = Some(LastKnownFaults {
+                    items: list.items.clone(),
+                    captured_at: Instant::now(),
+                });
+                Ok(list)
+            }
+            Err(err) => {
+                let cache = self.last_known_faults.read().await;
+                match cache.as_ref() {
+                    Some(snapshot) => {
+                        let age_ms =
+                            u64::try_from(snapshot.captured_at.elapsed().as_millis())
+                                .unwrap_or(u64::MAX);
+                        tracing::warn!(
+                            backend = "dfm",
+                            operation = "list_faults",
+                            component_id = %self.component,
+                            error_kind = "sovd_db_error_stale_fallback",
+                            age_ms,
+                            "Dfm: SovdDb error, serving last-known snapshot: {err}"
+                        );
+                        Ok(ListOfFaults {
+                            items: snapshot.items.clone(),
+                            schema: None,
+                            extras: Some(
+                                sovd_interfaces::extras::response::ResponseExtras::stale_cache(
+                                    age_ms,
+                                ),
+                            ),
+                        })
+                    }
+                    None => {
+                        tracing::warn!(
+                            backend = "dfm",
+                            operation = "list_faults",
+                            component_id = %self.component,
+                            error_kind = "sovd_db_error_no_cache",
+                            "Dfm: SovdDb error with empty cache, propagating: {err}"
+                        );
+                        Err(err)
+                    }
+                }
+            }
+        }
     }
 
     async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
