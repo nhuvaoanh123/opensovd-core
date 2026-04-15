@@ -418,10 +418,10 @@ impl SovdBackend for CdaBackend {
                     );
                 }
             }
-            if attempt + 1 >= CDA_MAX_ATTEMPTS {
+            if attempt.saturating_add(1) >= CDA_MAX_ATTEMPTS {
                 break;
             }
-            if start.elapsed() + backoff >= CDA_TOTAL_BUDGET {
+            if start.elapsed().saturating_add(backoff) >= CDA_TOTAL_BUDGET {
                 break;
             }
             tokio::time::sleep(backoff).await;
@@ -632,7 +632,7 @@ mod tests {
 
         let calls = StdArc::new(AtomicU32::new(0));
         let shared = SharedCounter {
-            calls: calls.clone(),
+            calls: StdArc::clone(&calls),
             fail_until: fail_times,
         };
         let app = Router::new()
@@ -694,7 +694,7 @@ mod tests {
         }
         let seen = calls.load(Ordering::SeqCst);
         assert!(
-            seen >= 2 && seen <= 5,
+            (2..=5).contains(&seen),
             "expected 2..=5 retry attempts, saw {seen}"
         );
         handle.abort();

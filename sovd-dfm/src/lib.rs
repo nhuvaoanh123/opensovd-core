@@ -11,6 +11,9 @@
  */
 
 #![allow(clippy::doc_markdown)]
+// ADR-0018 D7: deny expect_used in production backend code.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 //! Diagnostic Fault Manager (DFM) for the Eclipse `OpenSOVD` core stack.
 //!
@@ -131,6 +134,7 @@ impl std::fmt::Debug for Dfm {
             .field("operations", &self.operations.len())
             .field("data_catalog", &self.data_catalog.len())
             .field("executions", &"<RwLock<HashMap>>")
+            .field("last_known_faults", &"<RwLock<Option<LastKnownFaults>>>")
             .finish()
     }
 }
@@ -277,39 +281,33 @@ impl SovdBackend for Dfm {
             }
             Err(err) => {
                 let cache = self.last_known_faults.read().await;
-                match cache.as_ref() {
-                    Some(snapshot) => {
-                        let age_ms =
-                            u64::try_from(snapshot.captured_at.elapsed().as_millis())
-                                .unwrap_or(u64::MAX);
-                        tracing::warn!(
-                            backend = "dfm",
-                            operation = "list_faults",
-                            component_id = %self.component,
-                            error_kind = "sovd_db_error_stale_fallback",
-                            age_ms,
-                            "Dfm: SovdDb error, serving last-known snapshot: {err}"
-                        );
-                        Ok(ListOfFaults {
-                            items: snapshot.items.clone(),
-                            schema: None,
-                            extras: Some(
-                                sovd_interfaces::extras::response::ResponseExtras::stale_cache(
-                                    age_ms,
-                                ),
-                            ),
-                        })
-                    }
-                    None => {
-                        tracing::warn!(
-                            backend = "dfm",
-                            operation = "list_faults",
-                            component_id = %self.component,
-                            error_kind = "sovd_db_error_no_cache",
-                            "Dfm: SovdDb error with empty cache, propagating: {err}"
-                        );
-                        Err(err)
-                    }
+                if let Some(snapshot) = cache.as_ref() {
+                    let age_ms = u64::try_from(snapshot.captured_at.elapsed().as_millis())
+                        .unwrap_or(u64::MAX);
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "sovd_db_error_stale_fallback",
+                        age_ms,
+                        "Dfm: SovdDb error, serving last-known snapshot: {err}"
+                    );
+                    Ok(ListOfFaults {
+                        items: snapshot.items.clone(),
+                        schema: None,
+                        extras: Some(
+                            sovd_interfaces::extras::response::ResponseExtras::stale_cache(age_ms),
+                        ),
+                    })
+                } else {
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "sovd_db_error_no_cache",
+                        "Dfm: SovdDb error with empty cache, propagating: {err}"
+                    );
+                    Err(err)
                 }
             }
         }
@@ -586,7 +584,7 @@ mod tests {
 
         let fail = StdArc::new(AtomicBool::new(false));
         let db: Arc<dyn SovdDb> = Arc::new(FlakySovdDb {
-            fail: fail.clone(),
+            fail: StdArc::clone(&fail),
         });
         let cycles: Arc<dyn OperationCycle> = Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
         let dfm = Dfm::builder(ComponentId::new("cvc"))
@@ -611,7 +609,10 @@ mod tests {
             .await
             .expect("should return cached snapshot, not error");
         assert_eq!(degraded.items.len(), 1);
-        assert_eq!(degraded.items[0].code, "CACHED_001");
+        assert_eq!(
+            degraded.items.first().map(|f| f.code.as_str()),
+            Some("CACHED_001")
+        );
         let extras = degraded.extras.expect("stale extras must be set");
         assert!(extras.stale, "stale flag must be set on degraded response");
         assert!(

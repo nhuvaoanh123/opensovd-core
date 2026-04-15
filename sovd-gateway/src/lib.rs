@@ -61,6 +61,9 @@
 //! config and registering them via [`Gateway::register_host`].
 
 #![allow(clippy::doc_markdown)]
+// ADR-0018 D7: deny expect_used in production backend code.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;

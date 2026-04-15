@@ -10,6 +10,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
+// ADR-0018 D7: deny expect_used on production backend code;
+// workspace already denies unwrap_used. Tests keep both for
+// readability.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
+
 //! HTTP/REST SOVD server for the Eclipse `OpenSOVD` core stack.
 //!
 //! Phase 0 boots a bare `GET /sovd/v1/health` endpoint via [`app`]. Phase 1
