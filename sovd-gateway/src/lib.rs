@@ -61,6 +61,9 @@
 //! config and registering them via [`Gateway::register_host`].
 
 #![allow(clippy::doc_markdown)]
+// ADR-0018 D7: deny expect_used in production backend code.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
@@ -391,6 +394,12 @@ impl Gateway {
     /// `register_host` should have rejected), the first-registered
     /// host's entry is kept.
     ///
+    /// ADR-0018 rule 5: one dead host out of N must NOT poison the
+    /// whole response. Unreachable hosts' components are captured in
+    /// the aggregated response's `extras.host_unreachable` list and
+    /// the `extras.stale` flag is set, but the live hosts' entries
+    /// still come through.
+    ///
     /// # Errors
     ///
     /// Never fails at the aggregation layer; individual host errors
@@ -400,28 +409,41 @@ impl Gateway {
         let mut items: Vec<EntityReference> = Vec::new();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         let mut any_success = false;
-        let mut last_error: Option<String> = None;
+        let mut unreachable: Vec<ComponentId> = Vec::new();
         for host in &self.hosts {
-            match list_components_for_host(host.as_ref()).await {
-                Ok(refs) => {
-                    any_success = true;
-                    for reference in refs {
-                        if seen.insert(reference.id.clone()) {
-                            items.push(reference);
-                        }
-                    }
+            let fan_out = list_components_for_host(host.as_ref()).await;
+            if !fan_out.live.is_empty() {
+                any_success = true;
+            }
+            for reference in fan_out.live {
+                if seen.insert(reference.id.clone()) {
+                    items.push(reference);
                 }
-                Err(e) => {
-                    tracing::warn!(host = host.name(), "list_components failed: {e}");
-                    last_error = Some(format!("{}: {e}", host.name()));
+            }
+            for cid in fan_out.unreachable {
+                if !unreachable.contains(&cid) {
+                    unreachable.push(cid);
                 }
             }
         }
+        // Legacy behaviour: if we had zero successes AND zero
+        // unreachables (nothing was registered) the gateway is
+        // simply empty; return nominal empty list.
+        let last_error: Option<String> = if unreachable.is_empty() || any_success {
+            None
+        } else {
+            Some(format!(
+                "all hosts unreachable ({} components)",
+                unreachable.len()
+            ))
+        };
         if !any_success && self.hosts.is_empty() {
             // Empty gateway is a valid configuration — return an empty
-            // list rather than faulting. (A deployment with zero
-            // hosts is useful for the Phase 0 sanity check.)
-            return Ok(DiscoveredEntities { items });
+            // list rather than faulting.
+            return Ok(DiscoveredEntities {
+                items,
+                extras: None,
+            });
         }
         if !any_success {
             return Err(SovdError::Transport(format!(
@@ -430,12 +452,30 @@ impl Gateway {
             )));
         }
         items.sort_by(|a, b| a.id.cmp(&b.id));
-        Ok(DiscoveredEntities { items })
+        let extras = if unreachable.is_empty() {
+            None
+        } else {
+            unreachable.sort_by(|a, b| a.as_str().cmp(b.as_str()));
+            Some(sovd_interfaces::extras::response::ResponseExtras::host_unreachable(unreachable))
+        };
+        Ok(DiscoveredEntities { items, extras })
     }
 }
 
-async fn list_components_for_host(host: &dyn GatewayHost) -> Result<Vec<EntityReference>> {
+/// Per-host list_components fan-out result. Carries both the live
+/// [`EntityReference`] rows the host returned and the component ids
+/// the host failed to answer for — ADR-0018 rule 5 lets the caller
+/// distinguish "host silent" from "host said no to a specific
+/// component". Empty `live` + non-empty `unreachable` means the
+/// entire host was unreachable.
+struct HostFanOut {
+    live: Vec<EntityReference>,
+    unreachable: Vec<ComponentId>,
+}
+
+async fn list_components_for_host(host: &dyn GatewayHost) -> HostFanOut {
     let mut refs = Vec::new();
+    let mut unreachable = Vec::new();
     for component in host.components() {
         match host.entity_capabilities(&component).await {
             Ok(caps) => refs.push(EntityReference {
@@ -447,14 +487,21 @@ async fn list_components_for_host(host: &dyn GatewayHost) -> Result<Vec<EntityRe
             }),
             Err(e) => {
                 tracing::warn!(
+                    backend = "gateway",
+                    operation = "list_components",
                     host = host.name(),
-                    component = %component,
+                    component_id = %component,
+                    error_kind = "entity_capabilities_failed",
                     "entity_capabilities failed: {e}"
                 );
+                unreachable.push(component);
             }
         }
     }
-    Ok(refs)
+    HostFanOut {
+        live: refs,
+        unreachable,
+    }
 }
 
 // --- config ------------------------------------------------------------
@@ -570,6 +617,7 @@ mod tests {
             Ok(ListOfFaults {
                 items: Vec::new(),
                 schema: None,
+                extras: None,
             })
         }
         async fn clear_all_faults(&self) -> SovdResult<()> {
@@ -681,6 +729,132 @@ mod tests {
             matches!(err, SovdError::InvalidRequest(ref m) if m.contains("already served")),
             "{err:?}"
         );
+    }
+
+    // D5-red: ADR-0018 rule 5 mandates half-open handling in the
+    // RemoteHost fan-out: one dead host out of N must NOT poison the
+    // whole `GET /components` response. The live hosts' entries come
+    // through, and the dead host's component ids are captured as
+    // status: "host-unreachable" in the aggregated response extras.
+    //
+    // The test uses two in-process LocalHost fakes wired through the
+    // GatewayHost trait. One fake panics on entity_capabilities —
+    // simulating a remote host becoming unreachable — the other
+    // answers normally. Gateway::list_components should see the
+    // live one and mark the dead one's component in extras.host_unreachable.
+
+    struct DeadHost {
+        name: String,
+        components: Vec<ComponentId>,
+    }
+
+    #[async_trait]
+    impl GatewayHost for DeadHost {
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn components(&self) -> Vec<ComponentId> {
+            self.components.clone()
+        }
+        async fn list_faults(
+            &self,
+            component: &ComponentId,
+            _filter: FaultFilter,
+        ) -> SovdResult<ListOfFaults> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn get_fault(
+            &self,
+            component: &ComponentId,
+            _code: &str,
+        ) -> SovdResult<FaultDetails> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn clear_all_faults(&self, component: &ComponentId) -> SovdResult<()> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn clear_fault(&self, component: &ComponentId, _code: &str) -> SovdResult<()> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn list_operations(&self, component: &ComponentId) -> SovdResult<OperationsList> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn start_execution(
+            &self,
+            component: &ComponentId,
+            _operation_id: &str,
+            _request: StartExecutionRequest,
+        ) -> SovdResult<StartExecutionAsyncResponse> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn execution_status(
+            &self,
+            component: &ComponentId,
+            _operation_id: &str,
+            _execution_id: &str,
+        ) -> SovdResult<ExecutionStatusResponse> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+        async fn entity_capabilities(
+            &self,
+            component: &ComponentId,
+        ) -> SovdResult<EntityCapabilities> {
+            Err(SovdError::HostUnreachable {
+                component_id: component.clone(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn list_components_survives_one_dead_host() {
+        let mut gateway = Gateway::new();
+        gateway
+            .register_host(Arc::new(
+                LocalHost::new("live", vec![mock_backend("cvc")]).unwrap(),
+            ))
+            .unwrap();
+        gateway
+            .register_host(Arc::new(DeadHost {
+                name: "dead".into(),
+                components: vec![ComponentId::new("fzc"), ComponentId::new("rzc")],
+            }))
+            .unwrap();
+        let discovered = gateway
+            .list_components()
+            .await
+            .expect("list_components must not fail on partial outage");
+        let ids: Vec<String> = discovered.items.iter().map(|r| r.id.clone()).collect();
+        assert_eq!(ids, vec!["cvc"], "live host's components must come through");
+        let extras = discovered
+            .extras
+            .as_ref()
+            .expect("extras must be set when a host is unreachable");
+        let unreachable_raw = extras
+            .host_unreachable
+            .as_ref()
+            .expect("host_unreachable list must be populated");
+        let mut unreachable_sorted = unreachable_raw.clone();
+        unreachable_sorted.sort();
+        assert_eq!(
+            unreachable_sorted,
+            vec!["fzc".to_owned(), "rzc".to_owned()],
+            "dead host's components must be reported in host_unreachable"
+        );
+        assert!(extras.stale, "stale flag must be set on partial outage");
     }
 
     #[tokio::test]

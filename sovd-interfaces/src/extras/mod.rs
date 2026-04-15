@@ -33,3 +33,4 @@
 
 pub mod fault;
 pub mod health;
+pub mod response;

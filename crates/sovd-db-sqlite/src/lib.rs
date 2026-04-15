@@ -256,6 +256,7 @@ impl SovdDb for SqliteSovdDb {
         Ok(ListOfFaults {
             items,
             schema: None,
+            extras: None,
         })
     }
 
@@ -298,6 +299,7 @@ impl SovdDb for SqliteSovdDb {
             environment_data: None,
             errors: None,
             schema: None,
+            extras: None,
         })
     }
 

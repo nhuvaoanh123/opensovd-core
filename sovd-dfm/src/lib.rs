@@ -11,6 +11,9 @@
  */
 
 #![allow(clippy::doc_markdown)]
+// ADR-0018 D7: deny expect_used in production backend code.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 //! Diagnostic Fault Manager (DFM) for the Eclipse `OpenSOVD` core stack.
 //!
@@ -36,6 +39,7 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use sovd_interfaces::{
@@ -63,6 +67,12 @@ use uuid::Uuid;
 pub mod config;
 
 pub use config::{DfmBackendConfig, FaultSinkBackend, OperationCycleBackend, PersistenceBackend};
+
+/// ADR-0018 rule 3: default budget for `try_lock_with_timeout`. The
+/// operation under the guard must be short-running; the budget is
+/// the outer wall-clock window we are willing to block before
+/// falling back to a degraded response.
+const LOCK_BUDGET: Duration = Duration::from_millis(50);
 
 /// Record of one operation execution managed by the DFM.
 #[derive(Debug, Clone)]
@@ -102,6 +112,23 @@ pub struct Dfm {
     /// router only touches executions via
     /// [`SovdBackend::start_execution`] / [`SovdBackend::execution_status`].
     executions: Arc<RwLock<HashMap<String, ExecutionRecord>>>,
+    /// ADR-0018 rule 4 last-known snapshot cache. Every successful
+    /// `list_faults` from the underlying `SovdDb` captures its
+    /// response here with a wall-clock timestamp. On a subsequent
+    /// `SovdDb` error we serve the cached snapshot with a
+    /// `stale: true` + `age_ms` marker rather than propagating the
+    /// error. An empty cache on the first-ever error surfaces the
+    /// original error, because there is nothing usable to fall
+    /// back to.
+    last_known_faults: Arc<RwLock<Option<LastKnownFaults>>>,
+}
+
+/// Last successful `SovdDb::list_faults` result, cached for the
+/// stale-fallback path per ADR-0018 rule 4.
+#[derive(Debug, Clone)]
+struct LastKnownFaults {
+    items: Vec<sovd_interfaces::spec::fault::Fault>,
+    captured_at: Instant,
 }
 
 impl std::fmt::Debug for Dfm {
@@ -113,6 +140,7 @@ impl std::fmt::Debug for Dfm {
             .field("operations", &self.operations.len())
             .field("data_catalog", &self.data_catalog.len())
             .field("executions", &"<RwLock<HashMap>>")
+            .field("last_known_faults", &"<RwLock<Option<LastKnownFaults>>>")
             .finish()
     }
 }
@@ -217,6 +245,7 @@ impl DfmBuilder {
             operations: self.operations,
             data_catalog: self.data_catalog,
             executions: Arc::new(RwLock::new(HashMap::new())),
+            last_known_faults: Arc::new(RwLock::new(None)),
         })
     }
 }
@@ -243,7 +272,89 @@ impl SovdBackend for Dfm {
     }
 
     async fn list_faults(&self, filter: FaultFilter) -> Result<ListOfFaults> {
-        self.db.list_faults(filter).await
+        // ADR-0018 rule 4: on success, warm the last-known snapshot;
+        // on SovdDb error, try to serve the cached snapshot with a
+        // stale: true marker instead of propagating. Fall through to
+        // the original error only if the cache is empty.
+        match self.db.list_faults(filter).await {
+            Ok(list) => {
+                // ADR-0018 rule 3: bounded lock acquisition. If we
+                // cannot grab the cache within LOCK_BUDGET we skip
+                // cache update and return the fresh list anyway —
+                // the next successful call will update the cache.
+                if let Ok(mut cache) =
+                    tokio::time::timeout(LOCK_BUDGET, self.last_known_faults.write()).await
+                {
+                    *cache = Some(LastKnownFaults {
+                        items: list.items.clone(),
+                        captured_at: Instant::now(),
+                    });
+                } else {
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "cache_lock_timeout",
+                        budget_ms = u64::try_from(LOCK_BUDGET.as_millis()).unwrap_or(u64::MAX),
+                        "Dfm: last_known_faults write lock contended; skipping cache update"
+                    );
+                }
+                Ok(list)
+            }
+            Err(err) => {
+                // Bounded read per ADR-0018 rule 3. Short-circuit to
+                // the original error on contention rather than hang.
+                let cache_guard = if let Ok(guard) =
+                    tokio::time::timeout(LOCK_BUDGET, self.last_known_faults.read()).await
+                {
+                    Some(guard)
+                } else {
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "cache_lock_timeout",
+                        budget_ms = u64::try_from(LOCK_BUDGET.as_millis()).unwrap_or(u64::MAX),
+                        "Dfm: last_known_faults read lock contended on fallback"
+                    );
+                    None
+                };
+                let Some(guard) = cache_guard.as_ref() else {
+                    return Err(SovdError::Degraded {
+                        reason: "dfm cache lock contention".into(),
+                    });
+                };
+                let cache = guard.as_ref();
+                if let Some(snapshot) = cache {
+                    let age_ms = u64::try_from(snapshot.captured_at.elapsed().as_millis())
+                        .unwrap_or(u64::MAX);
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "sovd_db_error_stale_fallback",
+                        age_ms,
+                        "Dfm: SovdDb error, serving last-known snapshot: {err}"
+                    );
+                    Ok(ListOfFaults {
+                        items: snapshot.items.clone(),
+                        schema: None,
+                        extras: Some(
+                            sovd_interfaces::extras::response::ResponseExtras::stale_cache(age_ms),
+                        ),
+                    })
+                } else {
+                    tracing::warn!(
+                        backend = "dfm",
+                        operation = "list_faults",
+                        component_id = %self.component,
+                        error_kind = "sovd_db_error_no_cache",
+                        "Dfm: SovdDb error with empty cache, propagating: {err}"
+                    );
+                    Err(err)
+                }
+            }
+        }
     }
 
     async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
@@ -450,6 +561,212 @@ mod tests {
         dfm.clear_all_faults().await.expect("clear");
         let list = dfm.list_faults(FaultFilter::all()).await.expect("list");
         assert!(list.items.is_empty());
+    }
+
+    // D4-red: ADR-0018 rule 4 mandates that on a SovdDb error Dfm
+    // falls back to a last-known snapshot with a stale: true flag,
+    // NOT a propagated error. We simulate the failure path with a
+    // fake SovdDb that succeeds once, caches the snapshot through
+    // Dfm::list_faults, then fails, and expect the Dfm layer to
+    // serve the cache rather than bail.
+    //
+    // The fake needs interior mutability so the test can flip the
+    // fail flag between calls.
+    #[tokio::test]
+    async fn list_faults_falls_back_to_last_known_snapshot_on_db_error() {
+        use sovd_interfaces::spec::fault::Fault;
+        use sovd_interfaces::traits::sovd_db::SovdDb;
+        use std::sync::Arc as StdArc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        struct FlakySovdDb {
+            fail: StdArc<AtomicBool>,
+        }
+
+        #[async_trait]
+        impl SovdDb for FlakySovdDb {
+            async fn ingest_fault(
+                &self,
+                _record: sovd_interfaces::extras::fault::FaultRecord,
+            ) -> Result<()> {
+                Ok(())
+            }
+            async fn list_faults(&self, _filter: FaultFilter) -> Result<ListOfFaults> {
+                if self.fail.load(Ordering::SeqCst) {
+                    return Err(SovdError::Internal("simulated sqlite busy".into()));
+                }
+                Ok(ListOfFaults {
+                    items: vec![Fault {
+                        code: "CACHED_001".into(),
+                        scope: None,
+                        display_code: None,
+                        fault_name: "cached".into(),
+                        fault_translation_id: None,
+                        severity: Some(2),
+                        status: None,
+                        symptom: None,
+                        symptom_translation_id: None,
+                        tags: None,
+                    }],
+                    schema: None,
+                    extras: None,
+                })
+            }
+            async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
+                Err(SovdError::NotFound {
+                    entity: code.into(),
+                })
+            }
+            async fn clear_faults(&self, _filter: FaultFilter) -> Result<()> {
+                Ok(())
+            }
+            async fn clear_fault_by_code(&self, _code: &str) -> Result<()> {
+                Ok(())
+            }
+            async fn snapshot_for_operation_cycle(
+                &self,
+                _cycle_id: &sovd_interfaces::traits::sovd_db::OperationCycleId,
+            ) -> Result<()> {
+                Ok(())
+            }
+        }
+
+        let fail = StdArc::new(AtomicBool::new(false));
+        let db: Arc<dyn SovdDb> = Arc::new(FlakySovdDb {
+            fail: StdArc::clone(&fail),
+        });
+        let cycles: Arc<dyn OperationCycle> =
+            Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
+        let dfm = Dfm::builder(ComponentId::new("cvc"))
+            .with_db(db)
+            .with_cycles(cycles)
+            .build()
+            .expect("build");
+
+        // First call: warms the cache from a successful DB read.
+        let nominal = dfm
+            .list_faults(FaultFilter::all())
+            .await
+            .expect("warm cache");
+        assert_eq!(nominal.items.len(), 1);
+        assert!(
+            nominal.extras.is_none(),
+            "nominal response must not carry stale marker"
+        );
+
+        // Flip the DB to error mode and try again — ADR-0018 rule 4
+        // requires the cached snapshot to be served with stale: true.
+        fail.store(true, Ordering::SeqCst);
+        let degraded = dfm
+            .list_faults(FaultFilter::all())
+            .await
+            .expect("should return cached snapshot, not error");
+        assert_eq!(degraded.items.len(), 1);
+        assert_eq!(
+            degraded.items.first().map(|f| f.code.as_str()),
+            Some("CACHED_001")
+        );
+        let extras = degraded.extras.expect("stale extras must be set");
+        assert!(extras.stale, "stale flag must be set on degraded response");
+        assert!(
+            extras.age_ms.is_some(),
+            "age_ms must be populated on stale cache response"
+        );
+    }
+
+    // D6: lock contention stress. ADR-0018 rule 3 mandates that
+    // backend locks use a bounded acquisition budget (default 50 ms)
+    // and fall back to Degraded on timeout rather than hanging. We
+    // exercise the path by holding the last_known_faults write lock
+    // externally for longer than LOCK_BUDGET, then firing a
+    // list_faults call — under nominal behaviour the DFM should
+    // either skip its cache update silently (on the Ok() branch)
+    // or surface a Degraded on the fallback read branch.
+    #[tokio::test]
+    async fn list_faults_write_cache_timeout_does_not_hang() {
+        use sovd_interfaces::spec::fault::Fault;
+        use sovd_interfaces::traits::sovd_db::SovdDb;
+
+        struct AlwaysOkDb;
+
+        #[async_trait]
+        impl SovdDb for AlwaysOkDb {
+            async fn ingest_fault(
+                &self,
+                _record: sovd_interfaces::extras::fault::FaultRecord,
+            ) -> Result<()> {
+                Ok(())
+            }
+            async fn list_faults(&self, _filter: FaultFilter) -> Result<ListOfFaults> {
+                Ok(ListOfFaults {
+                    items: vec![Fault {
+                        code: "LIVE".into(),
+                        scope: None,
+                        display_code: None,
+                        fault_name: "live".into(),
+                        fault_translation_id: None,
+                        severity: Some(2),
+                        status: None,
+                        symptom: None,
+                        symptom_translation_id: None,
+                        tags: None,
+                    }],
+                    schema: None,
+                    extras: None,
+                })
+            }
+            async fn get_fault(&self, code: &str) -> Result<FaultDetails> {
+                Err(SovdError::NotFound {
+                    entity: code.into(),
+                })
+            }
+            async fn clear_faults(&self, _filter: FaultFilter) -> Result<()> {
+                Ok(())
+            }
+            async fn clear_fault_by_code(&self, _code: &str) -> Result<()> {
+                Ok(())
+            }
+            async fn snapshot_for_operation_cycle(
+                &self,
+                _cycle_id: &sovd_interfaces::traits::sovd_db::OperationCycleId,
+            ) -> Result<()> {
+                Ok(())
+            }
+        }
+
+        let db: Arc<dyn SovdDb> = Arc::new(AlwaysOkDb);
+        let cycles: Arc<dyn OperationCycle> =
+            Arc::new(opcycle_taktflow::TaktflowOperationCycle::new());
+        let dfm = Arc::new(
+            Dfm::builder(ComponentId::new("cvc"))
+                .with_db(db)
+                .with_cycles(cycles)
+                .build()
+                .expect("build"),
+        );
+
+        // Take the write lock for > LOCK_BUDGET (50 ms) so the
+        // in-flight list_faults caches contend on the write path.
+        let blocker_dfm = Arc::clone(&dfm);
+        let blocker = tokio::spawn(async move {
+            let _guard = blocker_dfm.last_known_faults.write().await;
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+        // Let the blocker acquire the lock first.
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        // This call must return (not hang) within the test timeout,
+        // and must return the live list — the cache update is
+        // allowed to no-op on lock timeout per ADR-0018 rule 3.
+        let list = tokio::time::timeout(
+            Duration::from_millis(500),
+            dfm.list_faults(FaultFilter::all()),
+        )
+        .await
+        .expect("list_faults must not hang under lock contention")
+        .expect("live list_faults should still succeed");
+        assert_eq!(list.items.len(), 1);
+        blocker.await.expect("blocker task");
     }
 
     #[tokio::test]

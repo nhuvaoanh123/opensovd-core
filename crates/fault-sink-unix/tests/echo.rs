@@ -14,6 +14,10 @@
 //! local-IPC endpoint. Runs on both Linux (Unix socket) and Windows
 //! (named pipe) using the same wire format.
 
+// ADR-0018 D7: integration test file, not live backend code —
+// allow expect() / unwrap() for test readability.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use std::sync::{Arc, Mutex};
 
 use fault_sink_unix::{UnixFaultSink, UnixFaultSource};

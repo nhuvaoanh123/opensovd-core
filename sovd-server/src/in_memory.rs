@@ -309,7 +309,10 @@ impl InMemoryServer {
             }
         }
         items.sort_by(|a, b| a.id.cmp(&b.id));
-        Ok(DiscoveredEntities { items })
+        Ok(DiscoveredEntities {
+            items,
+            extras: None,
+        })
     }
 
     /// Dispatch `list_faults` for `component`, forwarding to the
@@ -578,6 +581,7 @@ impl SovdServer for InMemoryComponentServer {
             Ok(ListOfFaults {
                 items,
                 schema: None,
+                extras: None,
             })
         })
         .await
@@ -599,6 +603,7 @@ impl SovdServer for InMemoryComponentServer {
                 environment_data,
                 errors: None,
                 schema: None,
+                extras: None,
             })
         })
         .await

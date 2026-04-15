@@ -5,6 +5,17 @@
     "items"
   ],
   "properties": {
+    "extras": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ResponseExtras",
+          "description": "Soft-fail marker per ADR-0018 rule 4. Absent on the nominal\npath so the spec-pure shape is preserved; set to\n`Some(ResponseExtras { stale: true, .. })` when the backend\nreturned a last-known snapshot because a fresh query failed\nor a retry budget was exhausted.\n\nExtra (per ADR-0006): not part of ISO 17978-3."
+        }
+      ]
+    },
     "items": {
       "type": "array",
       "items": {

@@ -92,6 +92,15 @@ pub struct EntityReference {
 pub struct DiscoveredEntities {
     /// All entities in the collection.
     pub items: Vec<EntityReference>,
+
+    /// Soft-fail marker per ADR-0018 rule 5. Set by the
+    /// `sovd-gateway` fan-out aggregator to report that one or more
+    /// remote hosts were unreachable but the remaining hosts still
+    /// answered. Absent on the nominal path.
+    ///
+    /// Extra (per ADR-0006): not part of ISO 17978-3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extras: Option<crate::extras::response::ResponseExtras>,
 }
 
 /// Response body for `GET /{entity-collection}` with optional schema embed.
@@ -269,6 +278,7 @@ mod tests {
                 href: "/v1/components/alk".into(),
                 tags: None,
             }],
+            extras: None,
         };
         let json = serde_json::to_string(&d).expect("serialize");
         let back: DiscoveredEntities = serde_json::from_str(&json).expect("deserialize");

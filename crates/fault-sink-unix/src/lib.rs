@@ -11,6 +11,12 @@
  */
 
 #![allow(clippy::doc_markdown)]
+// ADR-0018 D7: deny expect_used in production backend code. Tests
+// keep expect() for readability — propagating errors through the
+// integration test runner provides no extra diagnostic value when
+// the assertion machinery already captures panics.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 //! Unix-socket [`FaultSink`] backend.
 //!

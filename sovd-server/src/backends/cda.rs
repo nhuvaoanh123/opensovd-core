@@ -36,6 +36,8 @@
 //! drifts from the spec, `reqwest::Response::json::<SpecType>()` fails
 //! loudly and the caller sees the mismatch as a `SovdError::Transport`.
 
+use std::time::{Duration, Instant};
+
 use async_trait::async_trait;
 use reqwest::{Client, StatusCode};
 use sovd_interfaces::{
@@ -49,6 +51,33 @@ use sovd_interfaces::{
     types::error::Result,
 };
 use url::Url;
+
+/// ADR-0018 rule 2: retry policy for `CdaBackend` wire calls. The
+/// numbers are inlined here (not a generic middleware) so the
+/// policy stays visible at the call site — the alternative
+/// "`RetryMiddleware` on every backend" was explicitly rejected in
+/// the ADR's Alternatives section.
+const CDA_MAX_ATTEMPTS: u32 = 3;
+const CDA_TOTAL_BUDGET: Duration = Duration::from_millis(2_000);
+const CDA_INITIAL_BACKOFF: Duration = Duration::from_millis(50);
+
+/// Classify whether a `reqwest::Error` is worth retrying. Connection
+/// resets, timeouts, and 5xx responses are transient. 4xx (except
+/// 408/429) is a client-side problem that retrying will not fix.
+fn is_retryable(err: &reqwest::Error) -> bool {
+    if err.is_connect() || err.is_timeout() || err.is_request() {
+        return true;
+    }
+    if let Some(status) = err.status() {
+        if status.is_server_error() {
+            return true;
+        }
+        if status == StatusCode::REQUEST_TIMEOUT || status == StatusCode::TOO_MANY_REQUESTS {
+            return true;
+        }
+    }
+    false
+}
 
 /// Default downstream REST root served by the upstream `cda-sovd`
 /// binary (see `classic-diagnostic-adapter/cda-sovd/src/sovd/mod.rs`).
@@ -332,17 +361,85 @@ impl SovdBackend for CdaBackend {
                 .append_pair(&format!("status[{k}]"), v);
         }
 
-        let resp = self
-            .http
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| map_reqwest_err(&self.component_id, &e))?
-            .error_for_status()
-            .map_err(|e| map_reqwest_err(&self.component_id, &e))?;
-        resp.json::<ListOfFaults>()
-            .await
-            .map_err(|e| map_reqwest_err(&self.component_id, &e))
+        // ADR-0018 rule 2: retry transient 5xx / connection errors
+        // with exponential backoff, capped at 3 attempts and 2 s
+        // total elapsed. On budget exhaustion surface
+        // SovdError::Degraded so the caller sees a soft-fail, never
+        // a raw Transport propagating as a 5xx.
+        let start = Instant::now();
+        let mut backoff = CDA_INITIAL_BACKOFF;
+        let mut last_status: Option<StatusCode> = None;
+        for attempt in 0..CDA_MAX_ATTEMPTS {
+            let result = self.http.get(url.clone()).send().await;
+            match result {
+                Ok(response) => {
+                    let status = response.status();
+                    if status.is_success() {
+                        return response
+                            .json::<ListOfFaults>()
+                            .await
+                            .map_err(|e| map_reqwest_err(&self.component_id, &e));
+                    }
+                    last_status = Some(status);
+                    if status.is_server_error()
+                        || status == StatusCode::REQUEST_TIMEOUT
+                        || status == StatusCode::TOO_MANY_REQUESTS
+                    {
+                        tracing::warn!(
+                            backend = "cda",
+                            operation = "list_faults",
+                            component_id = %self.component_id,
+                            error_kind = "transient_http",
+                            status = %status,
+                            attempt,
+                            "CdaBackend transient failure; will retry within budget"
+                        );
+                    } else {
+                        // Non-retryable (4xx) — map through the
+                        // existing reqwest error path.
+                        return response
+                            .error_for_status()
+                            .map_err(|e| map_reqwest_err(&self.component_id, &e))?
+                            .json::<ListOfFaults>()
+                            .await
+                            .map_err(|e| map_reqwest_err(&self.component_id, &e));
+                    }
+                }
+                Err(err) => {
+                    if !is_retryable(&err) {
+                        return Err(map_reqwest_err(&self.component_id, &err));
+                    }
+                    tracing::warn!(
+                        backend = "cda",
+                        operation = "list_faults",
+                        component_id = %self.component_id,
+                        error_kind = "transient_reqwest",
+                        attempt,
+                        "CdaBackend transient reqwest error: {err}"
+                    );
+                }
+            }
+            if attempt.saturating_add(1) >= CDA_MAX_ATTEMPTS {
+                break;
+            }
+            if start.elapsed().saturating_add(backoff) >= CDA_TOTAL_BUDGET {
+                break;
+            }
+            tokio::time::sleep(backoff).await;
+            backoff = backoff.saturating_mul(2);
+        }
+        let reason = last_status.map_or_else(
+            || "cda retry budget exceeded".to_owned(),
+            |s| format!("cda retry budget exceeded (last status {s})"),
+        );
+        tracing::warn!(
+            backend = "cda",
+            operation = "list_faults",
+            component_id = %self.component_id,
+            error_kind = "retry_budget_exhausted",
+            "CdaBackend: {reason}"
+        );
+        Err(SovdError::Degraded { reason })
     }
 
     async fn clear_all_faults(&self) -> Result<()> {
@@ -476,5 +573,132 @@ mod tests {
         let backend = CdaBackend::new(ComponentId::new("cvc"), url).expect("construct");
         assert_eq!(backend.component_id(), ComponentId::new("cvc"));
         assert_eq!(backend.kind(), BackendKind::Cda);
+    }
+
+    // --- D3-red: retry with bounded backoff ----------------------------
+    //
+    // ADR-0018 rule 2 requires `CdaBackend` to retry transient downstream
+    // failures (5xx, connection reset) up to 3 times with exponential
+    // backoff and a 2 s total budget before surfacing an error. On
+    // success within the budget the caller should see a normal
+    // `ListOfFaults`; on budget exhaustion the caller should see
+    // `SovdError::Degraded` — never a raw `SovdError::Transport`.
+    //
+    // We drive this via a hand-rolled axum mock that counts calls and
+    // returns 503 N times before a 200 (or 503 forever).
+
+    use std::sync::Arc as StdArc;
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    async fn spin_up_flaky_cda(
+        fail_times: u32,
+    ) -> (Url, StdArc<AtomicU32>, tokio::task::JoinHandle<()>) {
+        use axum::{
+            Json, Router,
+            extract::State,
+            http::StatusCode as AxumStatus,
+            response::{IntoResponse, Response},
+            routing::get,
+        };
+        use sovd_interfaces::spec::fault::{Fault, ListOfFaults};
+        use tokio::net::TcpListener;
+
+        #[derive(Clone)]
+        struct SharedCounter {
+            calls: StdArc<AtomicU32>,
+            fail_until: u32,
+        }
+
+        async fn handler(State(counter): State<SharedCounter>) -> Response {
+            let n = counter.calls.fetch_add(1, Ordering::SeqCst);
+            if n < counter.fail_until {
+                return AxumStatus::SERVICE_UNAVAILABLE.into_response();
+            }
+            Json(ListOfFaults {
+                items: vec![Fault {
+                    code: "P0A1F".into(),
+                    scope: None,
+                    display_code: None,
+                    fault_name: "mock".into(),
+                    fault_translation_id: None,
+                    severity: Some(2),
+                    status: None,
+                    symptom: None,
+                    symptom_translation_id: None,
+                    tags: None,
+                }],
+                schema: None,
+                extras: None,
+            })
+            .into_response()
+        }
+
+        let calls = StdArc::new(AtomicU32::new(0));
+        let shared = SharedCounter {
+            calls: StdArc::clone(&calls),
+            fail_until: fail_times,
+        };
+        let app = Router::new()
+            .route(
+                "/vehicle/v15/components/{component_id}/faults",
+                get(handler),
+            )
+            .with_state(shared);
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr = listener.local_addr().expect("addr");
+        let handle = tokio::spawn(async move {
+            axum::serve(listener, app).await.expect("serve");
+        });
+        let url = Url::parse(&format!("http://{addr}/")).expect("parse");
+        (url, calls, handle)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn retry_within_budget_succeeds_after_transient_503s() {
+        // Two 503s then a 200. ADR-0018 says the retry loop must
+        // absorb the first two failures and surface the eventual 200
+        // as a normal ListOfFaults.
+        let (base, calls, handle) = spin_up_flaky_cda(2).await;
+        let backend = CdaBackend::new(ComponentId::new("cvc"), base).expect("construct backend");
+        let list = backend
+            .list_faults(FaultFilter::all())
+            .await
+            .expect("list_faults should succeed within retry budget");
+        assert_eq!(list.items.len(), 1);
+        assert!(
+            calls.load(Ordering::SeqCst) >= 3,
+            "expected at least 3 mock calls (2 fails + 1 success), saw {}",
+            calls.load(Ordering::SeqCst)
+        );
+        handle.abort();
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn retry_budget_exhausted_returns_degraded() {
+        // 5 consecutive 503s. ADR-0018 caps the retry loop at 3
+        // attempts (or 2 s budget) — on exhaustion we must see
+        // SovdError::Degraded, NOT a raw Transport surfacing as a 5xx.
+        let (base, calls, handle) = spin_up_flaky_cda(u32::MAX).await;
+        let backend = CdaBackend::new(ComponentId::new("cvc"), base).expect("construct backend");
+        let err = backend
+            .list_faults(FaultFilter::all())
+            .await
+            .expect_err("list_faults should fail after retry budget");
+        match err {
+            SovdError::Degraded { ref reason } => {
+                assert!(
+                    reason.to_lowercase().contains("retry")
+                        || reason.to_lowercase().contains("budget"),
+                    "expected degraded reason to mention retry/budget, got {reason:?}"
+                );
+            }
+            other => panic!("expected SovdError::Degraded, got {other:?}"),
+        }
+        let seen = calls.load(Ordering::SeqCst);
+        assert!(
+            (2..=5).contains(&seen),
+            "expected 2..=5 retry attempts, saw {seen}"
+        );
+        handle.abort();
     }
 }

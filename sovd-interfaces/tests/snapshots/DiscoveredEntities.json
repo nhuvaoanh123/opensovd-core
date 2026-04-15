@@ -5,6 +5,17 @@
     "items"
   ],
   "properties": {
+    "extras": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/components/schemas/ResponseExtras",
+          "description": "Soft-fail marker per ADR-0018 rule 5. Set by the\n`sovd-gateway` fan-out aggregator to report that one or more\nremote hosts were unreachable but the remaining hosts still\nanswered. Absent on the nominal path.\n\nExtra (per ADR-0006): not part of ISO 17978-3."
+        }
+      ]
+    },
     "items": {
       "type": "array",
       "items": {
