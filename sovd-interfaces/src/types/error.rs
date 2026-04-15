@@ -69,6 +69,43 @@ pub enum SovdError {
     /// variant above unless you truly have nowhere else to map.
     #[error("internal error: {0}")]
     Internal(String),
+
+    /// Generic soft-fail per ADR-0018: the backend produced a usable
+    /// response but in a degraded mode. The HTTP layer maps this to a
+    /// 200 with `stale: true` in the response extras rather than to a
+    /// 5xx so that a single downstream hiccup does not kill a tester
+    /// session. Callers that need to distinguish full-strength from
+    /// degraded responses look at the extras flag.
+    #[error("degraded: {reason}")]
+    Degraded {
+        /// Short machine-readable label for why the backend had to
+        /// degrade. Keep to a few words, e.g. `"sqlite busy"`,
+        /// `"cda retry budget exceeded"`, or
+        /// `"lock acquisition timeout"`.
+        reason: String,
+    },
+
+    /// Last-known snapshot served because fresh data was not
+    /// available (ADR-0018 rule 4). `age_ms` is how old the cached
+    /// data is from the caller's point of view — useful in the wire
+    /// response extras so a tester can decide whether to trust it.
+    #[error("stale cache: age_ms={age_ms}")]
+    StaleCache {
+        /// How long ago the cached snapshot was captured, in
+        /// milliseconds.
+        age_ms: u64,
+    },
+
+    /// One federated gateway host is unreachable, but the remaining
+    /// hosts may still be able to serve the request. The HTTP layer
+    /// and fan-out aggregator treat this as a soft marker instead of
+    /// poisoning the whole response (ADR-0018 rule 5).
+    #[error("host unreachable: {component_id}")]
+    HostUnreachable {
+        /// Component id that the unreachable remote host was supposed
+        /// to serve.
+        component_id: ComponentId,
+    },
 }
 
 #[cfg(test)]

@@ -54,6 +54,19 @@ impl From<SovdError> for ApiError {
             }
             SovdError::Transport(_) => (StatusCode::BAD_GATEWAY, "transport.error"),
             SovdError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal.error"),
+            // ADR-0018 never-hard-fail: the three soft-fail variants
+            // below should normally be absorbed at the backend or route
+            // handler layer and emitted as a 200 response with a
+            // `stale: true` marker in the response extras. They only
+            // reach this match arm when a route handler forgot to
+            // translate them — when that happens we still prefer a
+            // 503 "degraded" shape over a 5xx panic so the tester
+            // session stays alive. See ADR-0018 rules 1, 4, 5.
+            SovdError::Degraded { .. } => (StatusCode::SERVICE_UNAVAILABLE, "backend.degraded"),
+            SovdError::StaleCache { .. } => (StatusCode::SERVICE_UNAVAILABLE, "backend.stale"),
+            SovdError::HostUnreachable { .. } => {
+                (StatusCode::SERVICE_UNAVAILABLE, "gateway.host_unreachable")
+            }
         };
         Self::new(
             status,
