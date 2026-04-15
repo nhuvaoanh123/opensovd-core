@@ -70,3 +70,65 @@ pub enum SovdError {
     #[error("internal error: {0}")]
     Internal(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // D1-red: ADR-0018 introduces three new SovdError variants that
+    // let backends report soft-failure without poisoning the session.
+    // These tests name the variants explicitly so their absence fails
+    // the build loudly rather than silently.
+
+    #[test]
+    fn degraded_variant_exists_and_displays_reason() {
+        let err = SovdError::Degraded {
+            reason: "cda retry budget exceeded".into(),
+        };
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("degraded"),
+            "Degraded Display missing label: {rendered}"
+        );
+        assert!(
+            rendered.contains("cda retry budget exceeded"),
+            "Degraded Display missing reason: {rendered}"
+        );
+    }
+
+    #[test]
+    fn stale_cache_variant_carries_age_ms() {
+        let err = SovdError::StaleCache { age_ms: 1_750 };
+        let rendered = err.to_string();
+        assert!(rendered.contains("stale"), "StaleCache label: {rendered}");
+        assert!(rendered.contains("1750"), "StaleCache age_ms: {rendered}");
+    }
+
+    #[test]
+    fn host_unreachable_variant_carries_component_id() {
+        let err = SovdError::HostUnreachable {
+            component_id: ComponentId::new("cvc"),
+        };
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("host unreachable"),
+            "HostUnreachable label: {rendered}"
+        );
+        assert!(
+            rendered.contains("cvc"),
+            "HostUnreachable component: {rendered}"
+        );
+    }
+
+    #[test]
+    fn soft_fail_variants_are_debug_printable() {
+        // Regression — if the Debug derive on the enum breaks for
+        // struct variants, every tracing::warn! call using `?err`
+        // panics at format time.
+        let err = SovdError::Degraded {
+            reason: "lock timeout".into(),
+        };
+        let dbg = format!("{err:?}");
+        assert!(dbg.contains("Degraded"));
+    }
+}
