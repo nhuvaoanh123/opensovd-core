@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# Phase 5 Line A D1 — sovd-main systemd unit on the Raspberry Pi bench.
+#
+# Binds 0.0.0.0:21002 so the dev host can reach the SOVD HTTP API over
+# the bench LAN (192.168.0.0/24). The port is a fixed allocation from
+# phase-5-line-a.md and does NOT collide with ecu-sim (:13400) or the
+# CAN-to-DoIP proxy (:13401).
+
+[Unit]
+Description=Taktflow OpenSOVD sovd-main (Phase 5 Line A D1 Pi deploy)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=taktflow-pi
+Group=taktflow-pi
+WorkingDirectory=/opt/taktflow/sovd-main
+ExecStart=/opt/taktflow/sovd-main/sovd-main \
+    --config-file /opt/taktflow/sovd-main/opensovd.toml \
+    --listen-address 0.0.0.0 \
+    --listen-port 21002
+Restart=on-failure
+RestartSec=5
+# Keep logs compact on the Pi (SD card lifetime).
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

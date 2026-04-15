@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# Phase 5 Line A D1 — sovd-main configuration for the Raspberry Pi bench.
+# Installed by deploy/pi/phase5-full-stack.sh to
+# /opt/taktflow/sovd-main/opensovd.toml.
+
+[server]
+address = "0.0.0.0"
+port = 21002
+
+[logging.otel]
+enabled = false

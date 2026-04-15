@@ -139,8 +139,7 @@ async fn phase5_pi_full_stack_bench() {
 
     // --- 2. per-component /faults round-trip ------------------------
     for component in EXPECTED_COMPONENTS {
-        let faults_url =
-            format!("{PI_SOVD_MAIN_BASE_URL}/sovd/v1/components/{component}/faults");
+        let faults_url = format!("{PI_SOVD_MAIN_BASE_URL}/sovd/v1/components/{component}/faults");
         let response = client
             .get(&faults_url)
             .send()
