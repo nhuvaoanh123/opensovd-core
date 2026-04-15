@@ -391,6 +391,12 @@ impl Gateway {
     /// `register_host` should have rejected), the first-registered
     /// host's entry is kept.
     ///
+    /// ADR-0018 rule 5: one dead host out of N must NOT poison the
+    /// whole response. Unreachable hosts' components are captured in
+    /// the aggregated response's `extras.host_unreachable` list and
+    /// the `extras.stale` flag is set, but the live hosts' entries
+    /// still come through.
+    ///
     /// # Errors
     ///
     /// Never fails at the aggregation layer; individual host errors
@@ -400,27 +406,34 @@ impl Gateway {
         let mut items: Vec<EntityReference> = Vec::new();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         let mut any_success = false;
-        let mut last_error: Option<String> = None;
+        let mut unreachable: Vec<ComponentId> = Vec::new();
         for host in &self.hosts {
-            match list_components_for_host(host.as_ref()).await {
-                Ok(refs) => {
-                    any_success = true;
-                    for reference in refs {
-                        if seen.insert(reference.id.clone()) {
-                            items.push(reference);
-                        }
-                    }
+            let fan_out = list_components_for_host(host.as_ref()).await;
+            if !fan_out.live.is_empty() {
+                any_success = true;
+            }
+            for reference in fan_out.live {
+                if seen.insert(reference.id.clone()) {
+                    items.push(reference);
                 }
-                Err(e) => {
-                    tracing::warn!(host = host.name(), "list_components failed: {e}");
-                    last_error = Some(format!("{}: {e}", host.name()));
+            }
+            for cid in fan_out.unreachable {
+                if !unreachable.contains(&cid) {
+                    unreachable.push(cid);
                 }
             }
         }
+        // Legacy behaviour: if we had zero successes AND zero
+        // unreachables (nothing was registered) the gateway is
+        // simply empty; return nominal empty list.
+        let last_error: Option<String> = if unreachable.is_empty() || any_success {
+            None
+        } else {
+            Some(format!("all hosts unreachable ({} components)", unreachable.len()))
+        };
         if !any_success && self.hosts.is_empty() {
             // Empty gateway is a valid configuration — return an empty
-            // list rather than faulting. (A deployment with zero
-            // hosts is useful for the Phase 0 sanity check.)
+            // list rather than faulting.
             return Ok(DiscoveredEntities {
                 items,
                 extras: None,
@@ -433,15 +446,32 @@ impl Gateway {
             )));
         }
         items.sort_by(|a, b| a.id.cmp(&b.id));
-        Ok(DiscoveredEntities {
-            items,
-            extras: None,
-        })
+        let extras = if unreachable.is_empty() {
+            None
+        } else {
+            unreachable.sort_by(|a, b| a.as_str().cmp(b.as_str()));
+            Some(sovd_interfaces::extras::response::ResponseExtras::host_unreachable(
+                unreachable,
+            ))
+        };
+        Ok(DiscoveredEntities { items, extras })
     }
 }
 
-async fn list_components_for_host(host: &dyn GatewayHost) -> Result<Vec<EntityReference>> {
+/// Per-host list_components fan-out result. Carries both the live
+/// [`EntityReference`] rows the host returned and the component ids
+/// the host failed to answer for — ADR-0018 rule 5 lets the caller
+/// distinguish "host silent" from "host said no to a specific
+/// component". Empty `live` + non-empty `unreachable` means the
+/// entire host was unreachable.
+struct HostFanOut {
+    live: Vec<EntityReference>,
+    unreachable: Vec<ComponentId>,
+}
+
+async fn list_components_for_host(host: &dyn GatewayHost) -> HostFanOut {
     let mut refs = Vec::new();
+    let mut unreachable = Vec::new();
     for component in host.components() {
         match host.entity_capabilities(&component).await {
             Ok(caps) => refs.push(EntityReference {
@@ -453,14 +483,21 @@ async fn list_components_for_host(host: &dyn GatewayHost) -> Result<Vec<EntityRe
             }),
             Err(e) => {
                 tracing::warn!(
+                    backend = "gateway",
+                    operation = "list_components",
                     host = host.name(),
-                    component = %component,
+                    component_id = %component,
+                    error_kind = "entity_capabilities_failed",
                     "entity_capabilities failed: {e}"
                 );
+                unreachable.push(component);
             }
         }
     }
-    Ok(refs)
+    HostFanOut {
+        live: refs,
+        unreachable,
+    }
 }
 
 // --- config ------------------------------------------------------------

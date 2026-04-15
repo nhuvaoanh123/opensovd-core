@@ -510,6 +510,17 @@ components:
       required:
       - items
       properties:
+        extras:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ResponseExtras'
+            description: |-
+              Soft-fail marker per ADR-0018 rule 5. Set by the
+              `sovd-gateway` fan-out aggregator to report that one or more
+              remote hosts were unreachable but the remaining hosts still
+              answered. Absent on the nominal path.
+
+              Extra (per ADR-0006): not part of ISO 17978-3.
         items:
           type: array
           items:
