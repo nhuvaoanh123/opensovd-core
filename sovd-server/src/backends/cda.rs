@@ -269,11 +269,51 @@ mod tests {
     }
 
     #[test]
-    fn component_url_builds_nested_path() {
+    fn component_url_default_prefix_matches_upstream_cda() {
+        // D2: default prefix tracks upstream cda-sovd reality at
+        // /vehicle/v15/* (ADR-0006 track-upstream-as-it-is).
         let url = Url::parse("http://localhost:20002/").expect("parse");
         let backend = CdaBackend::new(ComponentId::new("cvc"), url).expect("construct");
         let got = backend.component_url("faults").expect("join");
+        assert_eq!(got.path(), "/vehicle/v15/components/cvc/faults");
+    }
+
+    #[test]
+    fn component_url_honours_explicit_prefix_override() {
+        // D1: callers may opt into a different REST root (e.g. for tests
+        // hitting a mock CDA that speaks /sovd/v1/*, or for forward
+        // compat when upstream migrates).
+        let url = Url::parse("http://localhost:20002/").expect("parse");
+        let backend = CdaBackend::new_with_path_prefix(
+            ComponentId::new("cvc"),
+            url,
+            "sovd/v1",
+        )
+        .expect("construct with prefix");
+        let got = backend.component_url("faults").expect("join");
         assert_eq!(got.path(), "/sovd/v1/components/cvc/faults");
+    }
+
+    #[test]
+    fn component_url_normalises_prefix_slashes() {
+        // Tolerate leading / and trailing / on the caller-supplied
+        // prefix so both "/vehicle/v15" and "vehicle/v15/" build the
+        // same final URL.
+        let url = Url::parse("http://localhost:20002/").expect("parse");
+        for raw in ["/vehicle/v15", "vehicle/v15/", "/vehicle/v15/", "vehicle/v15"] {
+            let backend = CdaBackend::new_with_path_prefix(
+                ComponentId::new("cvc"),
+                url.clone(),
+                raw,
+            )
+            .expect("construct with prefix");
+            let got = backend.component_url("faults").expect("join");
+            assert_eq!(
+                got.path(),
+                "/vehicle/v15/components/cvc/faults",
+                "prefix {raw:?} did not normalise",
+            );
+        }
     }
 
     #[test]
