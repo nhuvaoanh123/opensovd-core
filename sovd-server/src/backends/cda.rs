@@ -86,7 +86,7 @@ pub struct CdaBackend {
     /// Downstream REST path prefix joined under [`Self::base_url`],
     /// e.g. `"vehicle/v15"`. Normalised on construction: no leading
     /// slash, no trailing slash. Empty string is allowed and means
-    /// "join directly under base_url".
+    /// "join directly under `base_url`".
     path_prefix: String,
     /// Shared reqwest client. Safe to clone across requests.
     http: Client,
@@ -220,9 +220,7 @@ impl CdaBackend {
                 if e.is_connect() || e.is_timeout() || e.is_request() {
                     return Err(SovdError::BackendUnavailable(self.component_id.clone()));
                 }
-                return Err(SovdError::Transport(format!(
-                    "CDA preflight {url}: {e}"
-                )));
+                return Err(SovdError::Transport(format!("CDA preflight {url}: {e}")));
             }
         };
         let status = resp.status();
@@ -442,12 +440,8 @@ mod tests {
         // hitting a mock CDA that speaks /sovd/v1/*, or for forward
         // compat when upstream migrates).
         let url = Url::parse("http://localhost:20002/").expect("parse");
-        let backend = CdaBackend::new_with_path_prefix(
-            ComponentId::new("cvc"),
-            url,
-            "sovd/v1",
-        )
-        .expect("construct with prefix");
+        let backend = CdaBackend::new_with_path_prefix(ComponentId::new("cvc"), url, "sovd/v1")
+            .expect("construct with prefix");
         let got = backend.component_url("faults").expect("join");
         assert_eq!(got.path(), "/sovd/v1/components/cvc/faults");
     }
@@ -458,13 +452,15 @@ mod tests {
         // prefix so both "/vehicle/v15" and "vehicle/v15/" build the
         // same final URL.
         let url = Url::parse("http://localhost:20002/").expect("parse");
-        for raw in ["/vehicle/v15", "vehicle/v15/", "/vehicle/v15/", "vehicle/v15"] {
-            let backend = CdaBackend::new_with_path_prefix(
-                ComponentId::new("cvc"),
-                url.clone(),
-                raw,
-            )
-            .expect("construct with prefix");
+        for raw in [
+            "/vehicle/v15",
+            "vehicle/v15/",
+            "/vehicle/v15/",
+            "vehicle/v15",
+        ] {
+            let backend =
+                CdaBackend::new_with_path_prefix(ComponentId::new("cvc"), url.clone(), raw)
+                    .expect("construct with prefix");
             let got = backend.component_url("faults").expect("join");
             assert_eq!(
                 got.path(),

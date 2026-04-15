@@ -94,12 +94,9 @@ async fn sovd_main_forwards_cvc_via_cda_backend_to_mock_cda() {
     // cda-sovd prefix (/vehicle/v15/*). Pin the prefix explicitly so
     // this test remains independent of DEFAULT_CDA_PATH_PREFIX — see
     // sovd-server::backends::cda::DEFAULT_CDA_PATH_PREFIX and ADR-0006.
-    let cvc_backend = CdaBackend::new_with_path_prefix(
-        ComponentId::new("cvc"),
-        mock_cda_base.clone(),
-        "sovd/v1",
-    )
-    .expect("build CdaBackend for cvc");
+    let cvc_backend =
+        CdaBackend::new_with_path_prefix(ComponentId::new("cvc"), mock_cda_base.clone(), "sovd/v1")
+            .expect("build CdaBackend for cvc");
     sovd_main
         .register_forward(Arc::new(cvc_backend))
         .await

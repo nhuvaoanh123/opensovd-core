@@ -69,8 +69,7 @@ async fn preflight_flags_prefix_mismatch_against_mock_cda() {
     let base = Url::parse(&booted.base_url).expect("parse mock cda url");
 
     // --- RED: default CdaBackend::new uses /vehicle/v15 -------------
-    let wrong = CdaBackend::new(ComponentId::new("cvc"), base.clone())
-        .expect("build cda backend");
+    let wrong = CdaBackend::new(ComponentId::new("cvc"), base.clone()).expect("build cda backend");
     let err = wrong
         .preflight()
         .await
@@ -90,12 +89,8 @@ async fn preflight_flags_prefix_mismatch_against_mock_cda() {
     }
 
     // --- GREEN: explicit sovd/v1 prefix matches mock CDA ------------
-    let right = CdaBackend::new_with_path_prefix(
-        ComponentId::new("cvc"),
-        base.clone(),
-        "sovd/v1",
-    )
-    .expect("build cda backend with explicit prefix");
+    let right = CdaBackend::new_with_path_prefix(ComponentId::new("cvc"), base.clone(), "sovd/v1")
+        .expect("build cda backend with explicit prefix");
     right
         .preflight()
         .await
