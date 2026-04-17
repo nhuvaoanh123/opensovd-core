@@ -115,8 +115,9 @@ impl Drop for BootedDfm {
 // pathway honest: when real ODX fixtures land, we swap this fixture
 // module without touching the test body.
 mod fixture {
-    use super::{FaultId, FaultRecord, FaultSeverity};
     use sovd_interfaces::ComponentId;
+
+    use super::{FaultId, FaultRecord, FaultSeverity};
 
     pub fn record_for(offset: u32, severity: FaultSeverity) -> FaultRecord {
         FaultRecord {
@@ -246,7 +247,7 @@ async fn phase3_dfm_sqlite_roundtrip_bench() {
         return;
     }
     // Bench mode re-runs the standalone round-trip while the Pi ecu-sim
-    // is expected to be up at 192.168.0.197:13400 (same as Phase 2
+    // is expected to be up at 192.0.2.10:13400 (same as Phase 2
     // bench). The standalone DFM path does not actually talk to the Pi
     // — the bench variant exists to guard against a DFM wiring change
     // that would regress the Phase 2 smoke topology when the two

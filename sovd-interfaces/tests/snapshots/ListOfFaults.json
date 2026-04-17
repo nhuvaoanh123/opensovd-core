@@ -23,8 +23,26 @@
       },
       "description": "All faults that match the request filter."
     },
+    "next_page": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int32",
+      "description": "Cursor for the next page, expressed as the next 1-based page number.",
+      "minimum": 0
+    },
     "schema": {
       "description": "Optional embedded JSON Schema describing the response shape."
+    },
+    "total": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int64",
+      "description": "Total number of faults that matched the filter before paging.",
+      "minimum": 0
     }
   }
 }

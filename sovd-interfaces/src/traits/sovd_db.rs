@@ -40,9 +40,11 @@
 
 use async_trait::async_trait;
 
-use crate::extras::fault::FaultRecord;
-use crate::spec::fault::{FaultDetails, FaultFilter, ListOfFaults};
-use crate::types::error::Result;
+use crate::{
+    extras::fault::FaultRecord,
+    spec::fault::{FaultDetails, FaultFilter, ListOfFaults},
+    types::error::Result,
+};
 
 /// Opaque identifier for an operation cycle snapshot taken by the DFM.
 ///

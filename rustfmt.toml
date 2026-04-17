@@ -10,6 +10,11 @@
 
 max_width = 100
 
+# Nightly-only settings — enforced via `cargo +nightly fmt`
+# group_imports and imports_granularity require nightly rustfmt
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"
+
 # in case rustfmt stopps working again, enable these options
 # to get more information about the error
 # requires to run rustfmt with nightly toolchain

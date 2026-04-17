@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D3 - HIL scenario 02: clear faults and verify.
+#
+# 3-ECU bench per ADR-0023 (CVC, SC, BCM). The scenario must inject a
+# fault before issuing DELETE .../faults so the bench has something real
+# to clear. Line A does not own the physical injection path, so the
+# injection is recorded here as an explicit precondition. The integration
+# test fails if the component fault list is empty before the clear step.
+
+name: hil_sovd_02_clear_faults
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench fleet ready.
+    Keep D3 gated until the bench can both expose all components and
+    inject at least one clearable fault per component.
+
+fleet:
+  expected_components:
+    - cvc
+    - sc
+    - bcm
+
+precondition:
+  kind: fault-lib-injection
+  owner: line-b-bench-or-operator
+  reason: >-
+    Before D3 runs, inject at least one clearable fault into each
+    component via Fault-Lib or the equivalent bench-side trigger so the
+    clear flow proves a real state transition instead of deleting an
+    already-empty list.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+calls:
+  - name: cvc_clear_faults
+    component_id: cvc
+    list_method: GET
+    list_path: /sovd/v1/components/cvc/faults
+    expect_list_status: 200
+    clear_method: DELETE
+    clear_path: /sovd/v1/components/cvc/faults
+    expect_clear_status: 204
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults
+
+  - name: sc_clear_faults
+    component_id: sc
+    list_method: GET
+    list_path: /sovd/v1/components/sc/faults
+    expect_list_status: 200
+    clear_method: DELETE
+    clear_path: /sovd/v1/components/sc/faults
+    expect_clear_status: 204
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults
+
+  - name: bcm_clear_faults
+    component_id: bcm
+    list_method: GET
+    list_path: /sovd/v1/components/bcm/faults
+    expect_list_status: 200
+    clear_method: DELETE
+    clear_path: /sovd/v1/components/bcm/faults
+    expect_clear_status: 204
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults

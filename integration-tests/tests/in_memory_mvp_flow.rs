@@ -80,9 +80,10 @@ async fn in_memory_mvp_flow_round_trips_spec_types() {
     assert_eq!(response.status(), StatusCode::OK);
     let entities: DiscoveredEntities = response.json().await.expect("parse DiscoveredEntities");
     let ids: Vec<String> = entities.items.iter().map(|e| e.id.clone()).collect();
+    // list_entities returns in alphabetical order.
     assert_eq!(
         ids,
-        vec!["cvc".to_string(), "fzc".to_string(), "rzc".to_string()]
+        vec!["bcm".to_string(), "cvc".to_string(), "sc".to_string()]
     );
 
     // 2. GET /sovd/v1/components/cvc/faults -> ListOfFaults with 2 items.

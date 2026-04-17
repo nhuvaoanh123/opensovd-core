@@ -21,12 +21,14 @@
 //! trait takes a [`ComponentId`] on every call: one client instance can
 //! address many components behind the same base URL.
 
-use crate::spec::{
-    component::EntityCapabilities,
-    fault::{FaultFilter, ListOfFaults},
-    operation::{StartExecutionAsyncResponse, StartExecutionRequest},
+use crate::{
+    spec::{
+        component::EntityCapabilities,
+        fault::{FaultFilter, ListOfFaults},
+        operation::{StartExecutionAsyncResponse, StartExecutionRequest},
+    },
+    types::{component::ComponentId, error::Result},
 };
-use crate::types::{component::ComponentId, error::Result};
 
 /// Outbound SOVD REST client.
 pub trait SovdClient: Send + Sync {

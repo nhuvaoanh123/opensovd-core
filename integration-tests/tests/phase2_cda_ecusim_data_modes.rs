@@ -68,6 +68,7 @@ mod common;
 
 use std::time::Duration;
 
+use common::{BENCH_ENV, BenchGuard, CDA_BASE_URL, acquire_bearer, authed_client, bench_opt_in};
 use reqwest::{Client, StatusCode};
 use sovd_interfaces::spec::{
     component::DiscoveredEntities,
@@ -75,8 +76,6 @@ use sovd_interfaces::spec::{
     error::GenericError,
     mode::{ModeDetails, SupportedModes},
 };
-
-use common::{BENCH_ENV, BenchGuard, CDA_BASE_URL, acquire_bearer, authed_client, bench_opt_in};
 
 /// The four SOVD-standard mode identifiers that `spec::mode` names
 /// out explicitly. An ECU MAY expose additional OEM modes, but these

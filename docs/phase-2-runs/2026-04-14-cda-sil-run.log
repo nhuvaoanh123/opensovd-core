@@ -1,4 +1,4 @@
-[preflight] pinging Pi 192.168.0.197
+[preflight] pinging Pi 192.0.2.10
 [preflight] Pi reachable
 [preflight] checking ecu-sim on Pi via ssh
 [preflight] ecu-sim container running on Pi

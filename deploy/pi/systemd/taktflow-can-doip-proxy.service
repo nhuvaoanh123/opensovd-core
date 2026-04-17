@@ -44,8 +44,10 @@ User=taktflow-pi
 Group=taktflow-pi
 WorkingDirectory=/opt/taktflow/proxy
 ExecStart=/opt/taktflow/proxy/taktflow-can-doip-proxy \
-    --listen 0.0.0.0:13401 \
-    --can-iface can0
+    --config-file /opt/taktflow/proxy/proxy.toml \
+    --listen-address 0.0.0.0 \
+    --listen-port 13401 \
+    --can-interface can0
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

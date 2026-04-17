@@ -22,7 +22,7 @@
 
 set -euo pipefail
 
-PI=${PI:-taktflow-pi@192.168.0.197}
+PI=${PI:-bench-pi@192.0.2.10}
 REPO_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 CDA_ECUSIM=${CDA_ECUSIM:-$REPO_ROOT/../classic-diagnostic-adapter/testcontainer/ecu-sim}
 SYSTEMD_UNIT=$REPO_ROOT/deploy/pi/ecu-sim.service

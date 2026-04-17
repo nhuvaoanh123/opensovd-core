@@ -29,9 +29,10 @@
 //!
 //! See `docs/openapi-audit-2026-04-14.md` for provenance of each type.
 
-use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use sovd_interfaces::spec::{
     component::{

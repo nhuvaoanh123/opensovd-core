@@ -84,10 +84,10 @@ async fn sovd_main_forwards_cvc_via_cda_backend_to_mock_cda() {
     let mock_cda = BootedServer::start(mock_cda_server).await;
     let mock_cda_base = Url::parse(&format!("{}/", mock_cda.base_url)).expect("parse mock cda url");
 
-    // 2. sovd-main: another InMemoryServer, but this one has only local
-    //    bcm/icu/tcu state AND a CdaBackend for cvc pointing at mock CDA.
-    //    We build it from `new_empty` so the only way cvc can answer is
-    //    via the forwarded backend.
+    // 2. sovd-main: another InMemoryServer, but this one has only a
+    //    CdaBackend for cvc pointing at mock CDA. We build it from
+    //    `new_empty` so the only way cvc can answer is via the forwarded
+    //    backend.
     let sovd_main = Arc::new(InMemoryServer::new_empty());
     // The "mock CDA" here is another InMemoryServer that speaks the
     // native sovd-server routes (/sovd/v1/*), not the real upstream
@@ -120,19 +120,19 @@ async fn sovd_main_forwards_cvc_via_cda_backend_to_mock_cda() {
         "expected mock CDA's cvc faults to round-trip through CdaBackend; got {faults:?}"
     );
 
-    // 4. GET /sovd/v1/components/bcm/faults against sovd-main. bcm is NOT
-    //    registered either locally or as a forward, so we expect 404 —
-    //    this proves the dispatcher does not silently fall through to a
-    //    wrong backend.
+    // 4. GET /sovd/v1/components/unknown_ecu/faults against sovd-main.
+    //    unknown_ecu is NOT registered either locally or as a forward, so
+    //    we expect 404 — this proves the dispatcher does not silently fall
+    //    through to a wrong backend.
     let resp = client
-        .get(sovd_frontend.url("/sovd/v1/components/bcm/faults"))
+        .get(sovd_frontend.url("/sovd/v1/components/unknown_ecu/faults"))
         .send()
         .await
-        .expect("GET bcm faults via sovd-main");
+        .expect("GET unknown_ecu faults via sovd-main");
     assert_eq!(
         resp.status(),
         StatusCode::NOT_FOUND,
-        "bcm has no backend, expected 404"
+        "unknown_ecu has no backend, expected 404"
     );
 
     // 5. GET /sovd/v1/components against sovd-main should include `cvc`

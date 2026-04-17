@@ -58,10 +58,17 @@ pub const CDA_TCP_ADDR: &str = "127.0.0.1:20002";
 
 /// Pi `DoIP` port — used as a readiness probe for the ecu-sim container.
 /// We do NOT speak `DoIP` from the test, only a TCP SYN.
-pub const PI_DOIP_ADDR: &str = "192.168.0.197:13400";
+pub const PI_DOIP_ADDR_ENV: &str = "TAKTFLOW_PI_DOIP_ADDR";
+pub const DEFAULT_PI_DOIP_ADDR: &str = "192.0.2.10:13400";
+
+/// Pi `sovd-main` endpoint used by the Phase 5 HIL scenarios.
+pub const PI_SOVD_MAIN_ADDR_ENV: &str = "TAKTFLOW_PI_SOVD_MAIN_ADDR";
+pub const DEFAULT_PI_SOVD_MAIN_ADDR: &str = "192.0.2.10:21002";
+pub const PI_SOVD_MAIN_BASE_URL_ENV: &str = "TAKTFLOW_PI_SOVD_MAIN_BASE_URL";
 
 /// Pi SSH host used for ecu-sim lifecycle control.
-pub const PI_SSH_HOST: &str = "taktflow-pi@192.168.0.197";
+pub const PI_SSH_HOST_ENV: &str = "TAKTFLOW_PI_SSH_HOST";
+pub const DEFAULT_PI_SSH_HOST: &str = "bench-pi@192.0.2.10";
 
 /// Env var that opts the worker into running bench-gated tests.
 pub const BENCH_ENV: &str = "TAKTFLOW_BENCH";
@@ -70,6 +77,41 @@ pub const BENCH_ENV: &str = "TAKTFLOW_BENCH";
 #[must_use]
 pub fn bench_opt_in() -> bool {
     env::var(BENCH_ENV).ok().as_deref() == Some("1")
+}
+
+#[must_use]
+pub fn pi_doip_addr() -> String {
+    env::var(PI_DOIP_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_DOIP_ADDR.to_owned())
+}
+
+#[must_use]
+pub fn pi_sovd_main_addr() -> String {
+    env::var(PI_SOVD_MAIN_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_SOVD_MAIN_ADDR.to_owned())
+}
+
+#[must_use]
+pub fn pi_sovd_main_base_url() -> String {
+    env::var(PI_SOVD_MAIN_BASE_URL_ENV)
+        .unwrap_or_else(|_| format!("http://{}", pi_sovd_main_addr()))
+}
+
+#[must_use]
+pub fn pi_ssh_host() -> String {
+    env::var(PI_SSH_HOST_ENV).unwrap_or_else(|_| DEFAULT_PI_SSH_HOST.to_owned())
+}
+
+/// Apply the live Pi override to a Phase 5 HIL scenario gate. The checked-in
+/// YAML keeps public-safe placeholder addresses; real bench runs can override
+/// them via local env vars.
+pub fn override_pi_sovd_gate(tcp_addr: &mut String, base_url: &mut String) {
+    *tcp_addr = pi_sovd_main_addr();
+    *base_url = pi_sovd_main_base_url();
+}
+
+/// Apply the live Pi SSH override to scenario steps that need bench-side
+/// control over the Raspberry Pi.
+pub fn override_pi_ssh_host(ssh_host: &mut String) {
+    *ssh_host = pi_ssh_host();
 }
 
 /// Try to open a TCP connection to `addr` within `timeout`. Returns `true`
@@ -150,13 +192,14 @@ pub fn authed_client(token: &str) -> Client {
 /// the command exit status. Uses `-n` (non-interactive) so a missing
 /// sudoers rule surfaces immediately instead of hanging.
 fn ecu_sim_systemctl(verb: &str) -> std::io::Result<std::process::ExitStatus> {
+    let pi_ssh_host = pi_ssh_host();
     Command::new("ssh")
         .args([
             "-o",
             "BatchMode=yes",
             "-o",
             "ConnectTimeout=5",
-            PI_SSH_HOST,
+            &pi_ssh_host,
             &format!("sudo -n systemctl {verb} ecu-sim"),
         ])
         .stdin(Stdio::null())
@@ -169,7 +212,9 @@ fn ecu_sim_systemctl(verb: &str) -> std::io::Result<std::process::ExitStatus> {
 /// port to accept TCP connections. Returns an error if either step
 /// fails.
 pub fn start_ecu_sim() -> Result<(), String> {
-    eprintln!("[bench] ssh start ecu-sim on {PI_SSH_HOST}");
+    let pi_ssh_host = pi_ssh_host();
+    let pi_doip_addr = pi_doip_addr();
+    eprintln!("[bench] ssh start ecu-sim on {pi_ssh_host}");
     match ecu_sim_systemctl("start") {
         Ok(s) if s.success() => {}
         Ok(s) => return Err(format!("ssh systemctl start ecu-sim -> {s}")),
@@ -179,10 +224,10 @@ pub fn start_ecu_sim() -> Result<(), String> {
         .enable_all()
         .build()
         .map_err(|e| format!("build probe runtime: {e}"))?;
-    let ready = rt.block_on(wait_for_tcp(PI_DOIP_ADDR, Duration::from_secs(30)));
+    let ready = rt.block_on(wait_for_tcp(&pi_doip_addr, Duration::from_secs(30)));
     if !ready {
         return Err(format!(
-            "ecu-sim started but {PI_DOIP_ADDR} did not accept TCP within 30s"
+            "ecu-sim started but {pi_doip_addr} did not accept TCP within 30s"
         ));
     }
     eprintln!("[bench] ecu-sim DoIP port reachable");

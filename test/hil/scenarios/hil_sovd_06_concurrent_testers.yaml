@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D7 - HIL scenario 06: concurrent testers.
+#
+# Two independent reqwest clients exercise overlapping fault-read and
+# clear flows concurrently against the same Pi sovd-main instance on the
+# 3-ECU bench (ADR-0023: CVC, SC, BCM). Tester A hits the two physical
+# ECUs (CVC, SC); Tester B hits the virtual ECU (BCM) plus a second CVC
+# pass so both testers produce overlapping traffic on the same component.
+
+name: hil_sovd_06_concurrent_testers
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench ready. Keep D7 gated
+    until Pi sovd-main can serve concurrent fault flows across the
+    3-ECU bench with pre-seeded faults.
+
+fleet:
+  expected_components:
+    - cvc
+    - sc
+    - bcm
+
+precondition:
+  kind: fault-lib-injection
+  owner: line-b-bench-or-operator
+  reason: >-
+    Before D7 runs, inject at least one clearable fault into every
+    component referenced by either concurrent tester sequence so each
+    read+clear path proves a real state transition under concurrency.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+testers:
+  - name: tester_a
+    components:
+      - id: cvc
+        list_path: /sovd/v1/components/cvc/faults
+        clear_path: /sovd/v1/components/cvc/faults
+      - id: sc
+        list_path: /sovd/v1/components/sc/faults
+        clear_path: /sovd/v1/components/sc/faults
+  - name: tester_b
+    components:
+      - id: bcm
+        list_path: /sovd/v1/components/bcm/faults
+        clear_path: /sovd/v1/components/bcm/faults
+      - id: cvc
+        list_path: /sovd/v1/components/cvc/faults
+        clear_path: /sovd/v1/components/cvc/faults
+
+faults_call_contract:
+  list_method: GET
+  clear_method: DELETE
+  expect_list_status: 200
+  expect_clear_status: 204
+  expect_type: sovd_interfaces::spec::fault::ListOfFaults

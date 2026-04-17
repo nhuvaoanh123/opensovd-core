@@ -37,8 +37,7 @@
 //! [`InMemoryServer::new_with_demo_data`] — so individual route handlers
 //! never embed literal fault codes or operation ids of their own.
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use sovd_interfaces::{
     ComponentId, SovdError,
@@ -151,68 +150,57 @@ impl InMemoryServer {
     /// Build an in-memory server pre-populated with three demo components
     /// matching the Taktflow layout (Central Vehicle Controller, Front Zone
     /// Controller, Rear Zone Controller).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the hardcoded built-in demo component roster becomes
+    /// invalid during development. The configuration-facing constructor
+    /// [`new_with_demo_components`](Self::new_with_demo_components) remains
+    /// fallible instead of panicking.
     #[must_use]
     pub fn new_with_demo_data() -> Self {
+        // 3-ECU bench per ADR-0023: CVC central, SC safety, BCM virtual body.
+        match Self::new_with_demo_components(["cvc", "sc", "bcm"]) {
+            Ok(server) => server,
+            Err(err) => panic!("hardcoded demo component set must stay valid: {err}"),
+        }
+    }
+
+    /// Build an in-memory server with exactly the requested demo components.
+    ///
+    /// This is the configuration-facing constructor used by `sovd-main`
+    /// when a deployment wants a narrower local surface than the default
+    /// 3-ECU bench. Per ADR-0023 the supported ids are `cvc`, `sc`, and
+    /// `bcm`; earlier ids (`fzc`, `rzc`, `icu`, `tcu`) are retired.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SovdError::InvalidRequest`] if a requested id is
+    /// unknown or duplicated.
+    pub fn new_with_demo_components<I, S>(component_ids: I) -> Result<Self>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
         let mut components: HashMap<ComponentId, ComponentState> = HashMap::new();
+        for raw in component_ids {
+            let id = raw.as_ref();
+            let component = ComponentId::new(id);
+            if components.contains_key(&component) {
+                return Err(SovdError::InvalidRequest(format!(
+                    "duplicate demo component \"{id}\""
+                )));
+            }
+            let state = demo_component_state(id).ok_or_else(|| {
+                SovdError::InvalidRequest(format!("unknown demo component \"{id}\""))
+            })?;
+            components.insert(component, state);
+        }
 
-        components.insert(
-            ComponentId::new("cvc"),
-            demo_component(
-                "cvc",
-                "Central Vehicle Controller",
-                &[
-                    demo_fault("P0A1F", "HV battery contactor welded", 2, "active"),
-                    demo_fault("P0562", "System voltage low", 3, "pending"),
-                ],
-                &[
-                    demo_op("motor_self_test", "Motor self test", true),
-                    demo_op("hv_precharge", "HV precharge routine", true),
-                    demo_op("read_vin", "Read VIN", false),
-                ],
-                &[
-                    ("vin", serde_json::json!("WDD2031411F123456")),
-                    (
-                        "battery_voltage",
-                        serde_json::json!({"value": 12.8f64, "unit": "V"}),
-                    ),
-                ],
-            ),
-        );
-
-        components.insert(
-            ComponentId::new("fzc"),
-            demo_component(
-                "fzc",
-                "Front Zone Controller",
-                &[demo_fault(
-                    "U0100",
-                    "Lost communication with ECU",
-                    2,
-                    "active",
-                )],
-                &[
-                    demo_op("relay_self_test", "Relay self test", true),
-                    demo_op("read_vin", "Read VIN", false),
-                ],
-                &[("vin", serde_json::json!("WDD2031411F123456"))],
-            ),
-        );
-
-        components.insert(
-            ComponentId::new("rzc"),
-            demo_component(
-                "rzc",
-                "Rear Zone Controller",
-                &[],
-                &[demo_op("relay_self_test", "Relay self test", true)],
-                &[],
-            ),
-        );
-
-        Self {
+        Ok(Self {
             components: Arc::new(RwLock::new(components)),
             forwards: Arc::new(RwLock::new(HashMap::new())),
-        }
+        })
     }
 
     /// Register a forward backend for `component`. Any subsequent SOVD
@@ -580,6 +568,8 @@ impl SovdServer for InMemoryComponentServer {
                 .collect();
             Ok(ListOfFaults {
                 items,
+                total: None,
+                next_page: None,
                 schema: None,
                 extras: None,
             })
@@ -879,6 +869,57 @@ fn demo_component(
     }
 }
 
+fn demo_component_state(id: &str) -> Option<ComponentState> {
+    match id {
+        "cvc" => Some(demo_component(
+            "cvc",
+            "Central Vehicle Controller",
+            &[
+                demo_fault("P0A1F", "HV battery contactor welded", 2, "active"),
+                demo_fault("P0562", "System voltage low", 3, "pending"),
+            ],
+            &[
+                demo_op("motor_self_test", "Motor self test", true),
+                demo_op("hv_precharge", "HV precharge routine", true),
+                demo_op("read_vin", "Read VIN", false),
+            ],
+            &[
+                ("vin", serde_json::json!("WDD2031411F123456")),
+                (
+                    "battery_voltage",
+                    serde_json::json!({"value": 12.8f64, "unit": "V"}),
+                ),
+            ],
+        )),
+        "sc" => Some(demo_component(
+            "sc",
+            "Safety Controller",
+            &[demo_fault(
+                "U0100",
+                "Lost communication with ECU",
+                2,
+                "active",
+            )],
+            &[demo_op("safe_state_check", "Safe-state supervisor check", false)],
+            &[("hw_revision", serde_json::json!("TMS570LC43x-B"))],
+        )),
+        "bcm" => Some(demo_component(
+            "bcm",
+            "Body Control Module",
+            &[],
+            &[
+                demo_op("relay_self_test", "Relay self test", true),
+                demo_op("read_vin", "Read VIN", false),
+            ],
+            &[("vin", serde_json::json!("WDD2031411F123456"))],
+        )),
+        // Retired demo components (ADR-0023). Left as fall-through so an
+        // older config naming an ECU that was removed from the bench still
+        // returns None (no entity) rather than panicking during config load.
+        _ => None,
+    }
+}
+
 fn demo_fault(code: &str, name: &str, severity: i32, aggregated_status: &str) -> Fault {
     Fault {
         code: code.to_owned(),
@@ -917,7 +958,8 @@ mod tests {
         let server = InMemoryServer::new_with_demo_data();
         let entities = server.list_entities().await.expect("list entities");
         let ids: Vec<String> = entities.items.iter().map(|e| e.id.clone()).collect();
-        assert_eq!(ids, vec!["cvc", "fzc", "rzc"]);
+        // list_entities returns in alphabetical order.
+        assert_eq!(ids, vec!["bcm", "cvc", "sc"]);
     }
 
     #[tokio::test]
@@ -1038,5 +1080,26 @@ mod tests {
         let list = view.list_faults(filter).await.expect("list");
         // P0A1F has severity 2 (< 3), P0562 has severity 3 (not < 3).
         assert!(list.items.iter().all(|f| f.severity.unwrap_or(0) < 3));
+    }
+
+    #[tokio::test]
+    async fn configurable_demo_components_support_bcm_only() {
+        // ADR-0023: bcm is the virtual ECU in the 3-ECU bench, standing in
+        // for the earlier tcu-only configuration used by hybrid deploys.
+        let server = InMemoryServer::new_with_demo_components(["bcm"]).expect("build");
+        let entities = server.list_entities().await.expect("list entities");
+        assert_eq!(entities.items.len(), 1);
+        let first = entities.items.first().expect("bcm entity");
+        assert_eq!(first.id, "bcm");
+        assert_eq!(first.name, "Body Control Module");
+    }
+
+    #[test]
+    fn configurable_demo_components_reject_unknown_id() {
+        let err = InMemoryServer::new_with_demo_components(["unknown"]).expect_err("unknown id");
+        assert!(
+            matches!(err, SovdError::InvalidRequest(ref message) if message.contains("unknown demo component")),
+            "{err:?}"
+        );
     }
 }

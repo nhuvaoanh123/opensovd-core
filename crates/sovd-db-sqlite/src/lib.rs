@@ -26,9 +26,7 @@
 //! [`SovdDb`]: sovd_interfaces::traits::sovd_db::SovdDb
 //! [`spec::fault::Fault`]: sovd_interfaces::spec::fault::Fault
 
-use std::collections::BTreeMap;
-use std::path::Path;
-use std::str::FromStr;
+use std::{collections::BTreeMap, path::Path, str::FromStr};
 
 use async_trait::async_trait;
 use sovd_interfaces::{
@@ -255,6 +253,8 @@ impl SovdDb for SqliteSovdDb {
             .collect();
         Ok(ListOfFaults {
             items,
+            total: None,
+            next_page: None,
             schema: None,
             extras: None,
         })

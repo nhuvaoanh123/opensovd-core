@@ -22,7 +22,7 @@ REPO_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 CDA_ROOT=${CDA_ROOT:-$REPO_ROOT/../classic-diagnostic-adapter}
 CDA_BIN=${CDA_BIN:-$CDA_ROOT/target/release/opensovd-cda.exe}
 CDA_CONFIG=${CDA_CONFIG:-$REPO_ROOT/deploy/sil/opensovd-cda.toml}
-PI_HOST=${PI_HOST:-192.168.0.197}
+PI_HOST=${PI_HOST:-192.0.2.10}
 PI_USER=${PI_USER:-taktflow-pi}
 
 if [ ! -x "$CDA_BIN" ] && [ ! -f "$CDA_BIN" ]; then
@@ -62,4 +62,5 @@ echo "  config: $CDA_CONFIG"
 # (see cda-main/src/config/mod.rs::load_config). CLI flags would override
 # individual fields but there is no --config-file switch upstream.
 export CDA_CONFIG_FILE="$CDA_CONFIG"
+cd "$REPO_ROOT"
 exec "$CDA_BIN"

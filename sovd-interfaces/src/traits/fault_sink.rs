@@ -51,8 +51,7 @@
 
 use async_trait::async_trait;
 
-use crate::extras::fault::FaultRecord;
-use crate::types::error::Result;
+use crate::{extras::fault::FaultRecord, types::error::Result};
 
 /// Either an owned [`FaultRecord`] or a borrow of one.
 ///

@@ -35,15 +35,19 @@
 // The file is under `examples/` so it never enters the library
 // surface. Changing it does not affect any published crate API.
 
-use std::env;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
-use std::path::Path;
-use std::process::ExitCode;
+use std::{
+    env,
+    fs::File,
+    io::{BufRead, BufReader, Write},
+    path::Path,
+    process::ExitCode,
+};
 
 use fault_sink_unix::codec;
-use sovd_interfaces::ComponentId;
-use sovd_interfaces::extras::fault::{FaultId, FaultRecord, FaultSeverity};
+use sovd_interfaces::{
+    ComponentId,
+    extras::fault::{FaultId, FaultRecord, FaultSeverity},
+};
 
 /// A single row of libs/fault_lib/testdata/wire_records.csv.
 #[derive(Debug)]

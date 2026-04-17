@@ -1,4 +1,4 @@
-[1/4] Syncing ecu-sim source to taktflow-pi@192.168.0.197:~/ecu-sim/
+[1/4] Syncing ecu-sim source to bench-pi@192.0.2.10:~/ecu-sim/
 [2/4] Building docker image taktflow/cda-ecu-sim:latest on the Pi (aarch64)
 #0 building with "default" instance using docker driver
 
@@ -720,4 +720,4 @@ Apr 14 17:27:51 taktflow-pi docker[11148]: Error response from daemon: No such c
 Apr 14 17:27:51 taktflow-pi systemd[1]: Started ecu-sim.service - Taktflow CDA ECU Simulator (upstream Kotlin).
 ecu-sim container not yet running
 
-done — ecu-sim should be listening on taktflow-pi@192.168.0.197:13400
+done — ecu-sim should be listening on bench-pi@192.0.2.10:13400

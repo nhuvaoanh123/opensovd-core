@@ -25,7 +25,7 @@ cargo test (Windows dev box)
             └── CdaBackend forward   (flxc1000)
                     ↓ HTTP http://127.0.0.1:20002/vehicle/v15/*
                 CDA native binary
-                    └── DoIP 192.168.0.197:13400
+                    └── DoIP 192.0.2.10:13400
                             └── Pi ecu-sim (docker, host net, wlan0)
 ```
 
@@ -70,7 +70,7 @@ bench test).
 ```
 running 1 test
 phase4 full-chain bench preflight ok: http://127.0.0.1:20002/ + path_prefix="vehicle/v15"
-phase4_sovd_gateway_cda_ecusim_bench: 5 MVP use cases green against 192.168.0.197:13400
+phase4_sovd_gateway_cda_ecusim_bench: 5 MVP use cases green against 192.0.2.10:13400
 test phase4_sovd_gateway_cda_ecusim_bench ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s

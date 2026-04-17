@@ -93,6 +93,14 @@ pub struct ListOfFaults {
     /// All faults that match the request filter.
     pub items: Vec<Fault>,
 
+    /// Total number of faults that matched the filter before paging.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<u64>,
+
+    /// Cursor for the next page, expressed as the next 1-based page number.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_page: Option<u32>,
+
     /// Optional embedded JSON Schema describing the response shape.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<serde_json::Value>,
@@ -218,6 +226,8 @@ mod tests {
     fn list_of_faults_round_trip() {
         let list = ListOfFaults {
             items: vec![sample_fault()],
+            total: Some(1),
+            next_page: None,
             schema: None,
             extras: None,
         };
@@ -264,6 +274,8 @@ mod tests {
     fn list_of_faults_accepts_extras_stale_flag() {
         let list = ListOfFaults {
             items: Vec::new(),
+            total: Some(75),
+            next_page: Some(2),
             schema: None,
             extras: Some(crate::extras::response::ResponseExtras {
                 stale: true,
@@ -274,8 +286,12 @@ mod tests {
         let json = serde_json::to_string(&list).expect("serialize");
         assert!(json.contains("\"stale\":true"));
         assert!(json.contains("\"age_ms\":7500"));
+        assert!(json.contains("\"total\":75"));
+        assert!(json.contains("\"next_page\":2"));
         let back: ListOfFaults = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back.extras.as_ref().map(|e| e.stale), Some(true));
+        assert_eq!(back.total, Some(75));
+        assert_eq!(back.next_page, Some(2));
     }
 
     #[test]
@@ -308,6 +324,8 @@ mod tests {
         // exactly.
         let list = ListOfFaults {
             items: Vec::new(),
+            total: None,
+            next_page: None,
             schema: None,
             extras: None,
         };

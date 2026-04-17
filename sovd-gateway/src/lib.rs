@@ -65,8 +65,10 @@
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
-use std::collections::{BTreeSet, HashMap};
-use std::sync::Arc;
+use std::{
+    collections::{BTreeSet, HashMap},
+    sync::Arc,
+};
 
 use async_trait::async_trait;
 use serde::Deserialize;
@@ -592,12 +594,13 @@ impl GatewayConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use async_trait::async_trait;
     use sovd_interfaces::{
         traits::backend::{BackendKind, SovdBackend},
         types::error::Result as SovdResult,
     };
+
+    use super::*;
 
     // --- test doubles ---------------------------------------------------
 
@@ -616,6 +619,8 @@ mod tests {
         async fn list_faults(&self, _filter: FaultFilter) -> SovdResult<ListOfFaults> {
             Ok(ListOfFaults {
                 items: Vec::new(),
+                total: None,
+                next_page: None,
                 schema: None,
                 extras: None,
             })
@@ -830,7 +835,9 @@ mod tests {
         gateway
             .register_host(Arc::new(DeadHost {
                 name: "dead".into(),
-                components: vec![ComponentId::new("fzc"), ComponentId::new("rzc")],
+                // Arbitrary IDs for the unreachable-host test; intentionally
+                // not an active bench ECU (ADR-0023 keeps only cvc/sc/bcm).
+                components: vec![ComponentId::new("ghost_a"), ComponentId::new("ghost_b")],
             }))
             .unwrap();
         let discovered = gateway
@@ -851,7 +858,7 @@ mod tests {
         unreachable_sorted.sort();
         assert_eq!(
             unreachable_sorted,
-            vec!["fzc".to_owned(), "rzc".to_owned()],
+            vec!["ghost_a".to_owned(), "ghost_b".to_owned()],
             "dead host's components must be reported in host_unreachable"
         );
         assert!(extras.stale, "stale flag must be set on partial outage");

@@ -21,7 +21,7 @@
 //!   id, `"dfm"`, and owns the ingestion-side fault sink)
 //! - a `CdaBackend` pointed at `http://127.0.0.1:20002/` forwarding to
 //!   the locally-running CDA (which in turn talks to the Pi ecu-sim
-//!   over DoIP at `192.168.0.197:13400`)
+//!   over DoIP at `192.0.2.10:13400`)
 //!
 //! The test asserts the same five MVP use cases as
 //! `phase4_sovd_dfm_only_chain_five_mvp_use_cases` — but this time
@@ -50,7 +50,8 @@ use sovd_server::{CdaBackend, InMemoryServer, routes};
 use tokio::net::{TcpListener, TcpStream};
 use url::Url;
 
-const PI_DOIP_ADDR: &str = "192.168.0.197:13400";
+const PI_DOIP_ADDR_ENV: &str = "TAKTFLOW_PI_DOIP_ADDR";
+const DEFAULT_PI_DOIP_ADDR: &str = "192.0.2.10:13400";
 const CDA_BASE_URL: &str = "http://127.0.0.1:20002/";
 const BENCH_ENV: &str = "TAKTFLOW_BENCH";
 
@@ -64,27 +65,29 @@ const CDA_COMPONENT: &str = "flxc1000";
 const DFM_COMPONENT: &str = "dfm";
 
 async fn bench_reachable() -> bool {
+    let pi_doip_addr =
+        env::var(PI_DOIP_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_DOIP_ADDR.to_owned());
     if env::var(BENCH_ENV).ok().as_deref() != Some("1") {
         eprintln!(
             "skipping phase4 full-chain bench: {BENCH_ENV}=1 not set (set it to run on the bench LAN)"
         );
         return false;
     }
-    let addr: SocketAddr = match PI_DOIP_ADDR.parse() {
+    let addr: SocketAddr = match pi_doip_addr.parse() {
         Ok(a) => a,
         Err(e) => {
-            eprintln!("skipping phase4 full-chain bench: bad PI_DOIP_ADDR {PI_DOIP_ADDR}: {e}");
+            eprintln!("skipping phase4 full-chain bench: bad PI_DOIP_ADDR {pi_doip_addr}: {e}");
             return false;
         }
     };
     match tokio::time::timeout(Duration::from_secs(1), TcpStream::connect(addr)).await {
         Ok(Ok(_)) => {}
         Ok(Err(e)) => {
-            eprintln!("skipping phase4 full-chain bench: Pi {PI_DOIP_ADDR} not reachable: {e}");
+            eprintln!("skipping phase4 full-chain bench: Pi {pi_doip_addr} not reachable: {e}");
             return false;
         }
         Err(_) => {
-            eprintln!("skipping phase4 full-chain bench: Pi {PI_DOIP_ADDR} TCP probe timed out");
+            eprintln!("skipping phase4 full-chain bench: Pi {pi_doip_addr} TCP probe timed out");
             return false;
         }
     }
@@ -275,5 +278,7 @@ async fn phase4_sovd_gateway_cda_ecusim_bench() {
     assert!(ids.iter().any(|id| id == DFM_COMPONENT));
     assert!(ids.iter().any(|id| id == CDA_COMPONENT));
 
-    eprintln!("phase4_sovd_gateway_cda_ecusim_bench: 5 MVP use cases green against {PI_DOIP_ADDR}");
+    let pi_doip_addr =
+        env::var(PI_DOIP_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_DOIP_ADDR.to_owned());
+    eprintln!("phase4_sovd_gateway_cda_ecusim_bench: 5 MVP use cases green against {pi_doip_addr}");
 }

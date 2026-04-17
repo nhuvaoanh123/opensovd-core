@@ -177,11 +177,12 @@ pub async fn read_frame<R: AsyncReadExt + Unpin>(reader: &mut R) -> Result<Optio
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use sovd_interfaces::{
         ComponentId,
         extras::fault::{FaultId, FaultRecord, FaultSeverity},
     };
+
+    use super::*;
 
     fn sample() -> FaultRecord {
         FaultRecord {

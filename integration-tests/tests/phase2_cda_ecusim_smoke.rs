@@ -33,7 +33,7 @@
 //!
 //! - the env var `TAKTFLOW_BENCH=1` is set (worker intends to hit the live
 //!   bench), AND
-//! - a short TCP probe to `192.168.0.197:13400` (Pi ecu-sim `DoIP` port)
+//! - a short TCP probe to `192.0.2.10:13400` (Pi ecu-sim `DoIP` port)
 //!   succeeds within 1 second.
 //!
 //! Otherwise the test logs the reason and returns `Ok(())` — this keeps
@@ -64,33 +64,36 @@ const CDA_BASE_URL: &str = "http://127.0.0.1:20002";
 /// Pi `DoIP` port — this is what we probe for the preflight gate. We do
 /// NOT speak `DoIP` from the test; we only use a TCP SYN to confirm the
 /// bench is reachable.
-const PI_DOIP_ADDR: &str = "192.168.0.197:13400";
+const PI_DOIP_ADDR_ENV: &str = "TAKTFLOW_PI_DOIP_ADDR";
+const DEFAULT_PI_DOIP_ADDR: &str = "192.0.2.10:13400";
 
 /// Env var that opts the worker into running bench-gated tests.
 const BENCH_ENV: &str = "TAKTFLOW_BENCH";
 
 async fn bench_reachable() -> bool {
+    let pi_doip_addr =
+        env::var(PI_DOIP_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_DOIP_ADDR.to_owned());
     if env::var(BENCH_ENV).ok().as_deref() != Some("1") {
         eprintln!(
             "skipping phase2 cda+ecusim smoke: {BENCH_ENV}=1 not set (set it to run on the bench LAN)"
         );
         return false;
     }
-    let addr: SocketAddr = match PI_DOIP_ADDR.parse() {
+    let addr: SocketAddr = match pi_doip_addr.parse() {
         Ok(a) => a,
         Err(e) => {
-            eprintln!("skipping phase2 cda+ecusim smoke: bad PI_DOIP_ADDR {PI_DOIP_ADDR}: {e}");
+            eprintln!("skipping phase2 cda+ecusim smoke: bad PI_DOIP_ADDR {pi_doip_addr}: {e}");
             return false;
         }
     };
     match tokio::time::timeout(Duration::from_secs(1), TcpStream::connect(addr)).await {
         Ok(Ok(_)) => true,
         Ok(Err(e)) => {
-            eprintln!("skipping phase2 cda+ecusim smoke: Pi {PI_DOIP_ADDR} not reachable: {e}");
+            eprintln!("skipping phase2 cda+ecusim smoke: Pi {pi_doip_addr} not reachable: {e}");
             false
         }
         Err(_) => {
-            eprintln!("skipping phase2 cda+ecusim smoke: Pi {PI_DOIP_ADDR} TCP probe timed out");
+            eprintln!("skipping phase2 cda+ecusim smoke: Pi {pi_doip_addr} TCP probe timed out");
             false
         }
     }

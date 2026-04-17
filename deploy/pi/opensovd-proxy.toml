@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# Phase 5 Line A proxy config for the Pi-hosted CAN-to-DoIP bridge.
+# This mirrors the known-good routing IDs from the embedded backup branch
+# while keeping the Phase 5 port plan's non-colliding :13401 listener.
+
+listen_address = "0.0.0.0"
+listen_port = 13401
+can_interface = "can0"
+
+[discovery]
+mode = "both"
+
+[[ecu]]
+name = "cvc"
+doip_logical_address = 0x0001
+can_request_id = 0x7E0
+can_response_id = 0x7E8
+
+# 3-ECU bench per ADR-0023. SC is a CAN-attached TMS570 bridged through
+# the same proxy as CVC; physical DoIP on SC is deferred (ADR-0011).
+[[ecu]]
+name = "sc"
+doip_logical_address = 0x0004
+can_request_id = 0x7E3
+can_response_id = 0x7EB

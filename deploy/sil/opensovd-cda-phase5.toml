@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# Phase 5 Line A local CDA config for the real Taktflow bench path.
+#
+# This uses generated bench MDD aliases with distinct DoIP logical
+# addresses (3-ECU bench per ADR-0023):
+#   CVC00000 -> 0x0001  (central, active)
+#   SC00000  -> 0x0004  (safety, MDD pending)
+# (FZC00000, RZC00000 retired from the bench — ADR-0023.)
+#
+# Run from opensovd-core with:
+#   CDA_CONFIG=deploy/sil/opensovd-cda-phase5.toml ./deploy/sil/run-cda-local.sh
+
+[database]
+path = "deploy/pi/cda-mdd"
+
+[doip]
+tester_address = "192.0.2.20"
+tester_subnet = "255.255.255.0"
+
+[logging.otel]
+enabled = false
+

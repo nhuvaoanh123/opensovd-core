@@ -26,13 +26,12 @@ use axum::{
 };
 use serde::Deserialize;
 use sovd_interfaces::{
-    ComponentId,
+    ComponentId, SovdError,
     spec::fault::{FaultDetails, FaultFilter, ListOfFaults},
 };
 
 // Forward faults go through `InMemoryServer::dispatch_*` helpers so
 // route handlers never have to branch on local-vs-forwarded themselves.
-
 use crate::{InMemoryServer, routes::error::ApiError};
 
 /// Query parameters for `GET .../faults`.
@@ -51,22 +50,115 @@ pub struct FaultQuery {
     /// `key:value` pairs used to filter by status. Repeatable.
     #[serde(rename = "status_key")]
     pub status_key: Option<String>,
+    /// 1-based page number. Defaults to 1.
+    pub page: Option<String>,
+    /// Page size. Defaults to 50.
+    #[serde(rename = "page-size")]
+    pub page_size: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct FaultPagination {
+    page: u32,
+    page_size: usize,
 }
 
 impl FaultQuery {
-    fn into_filter(self) -> FaultFilter {
+    fn into_parts(self) -> Result<(FaultFilter, FaultPagination), SovdError> {
         let mut status_keys = Vec::new();
         if let Some(raw) = self.status_key {
             if let Some((k, v)) = raw.split_once(':') {
                 status_keys.push((k.to_owned(), v.to_owned()));
             }
         }
-        FaultFilter {
-            status_keys,
-            severity: self.severity,
-            scope: self.scope,
+        let page = parse_positive_u32(self.page.as_deref(), "page", 1)?;
+        let page_size = parse_positive_usize(self.page_size.as_deref(), "page-size", 50)?;
+        Ok((
+            FaultFilter {
+                status_keys,
+                severity: self.severity,
+                scope: self.scope,
+            },
+            FaultPagination { page, page_size },
+        ))
+    }
+}
+
+fn parse_positive_u32(raw: Option<&str>, name: &str, default: u32) -> Result<u32, SovdError> {
+    match raw {
+        None => Ok(default),
+        Some(value) => {
+            let parsed = value.parse::<u32>().map_err(|_| {
+                SovdError::InvalidRequest(format!("{name} must be a positive integer"))
+            })?;
+            if parsed == 0 {
+                return Err(SovdError::InvalidRequest(format!("{name} must be >= 1")));
+            }
+            Ok(parsed)
         }
     }
+}
+
+fn parse_positive_usize(raw: Option<&str>, name: &str, default: usize) -> Result<usize, SovdError> {
+    match raw {
+        None => Ok(default),
+        Some(value) => {
+            let parsed = value.parse::<usize>().map_err(|_| {
+                SovdError::InvalidRequest(format!("{name} must be a positive integer"))
+            })?;
+            if parsed == 0 {
+                return Err(SovdError::InvalidRequest(format!("{name} must be >= 1")));
+            }
+            Ok(parsed)
+        }
+    }
+}
+
+fn paginate_faults(
+    list: ListOfFaults,
+    pagination: FaultPagination,
+) -> Result<ListOfFaults, SovdError> {
+    let ListOfFaults {
+        items,
+        schema,
+        extras,
+        ..
+    } = list;
+    let total_len = items.len();
+    let total = u64::try_from(total_len)
+        .map_err(|_| SovdError::Internal("fault list length overflow".to_owned()))?;
+    let page_index = pagination
+        .page
+        .checked_sub(1)
+        .ok_or_else(|| SovdError::InvalidRequest("page must be >= 1".to_owned()))
+        .and_then(|page| {
+            usize::try_from(page)
+                .map_err(|_| SovdError::InvalidRequest("page exceeds supported range".to_owned()))
+        })?;
+    let start = page_index
+        .checked_mul(pagination.page_size)
+        .ok_or_else(|| SovdError::InvalidRequest("pagination window overflow".to_owned()))?;
+    let end = start.saturating_add(pagination.page_size).min(total_len);
+    let next_page =
+        if end < total_len {
+            Some(pagination.page.checked_add(1).ok_or_else(|| {
+                SovdError::InvalidRequest("page exceeds supported range".to_owned())
+            })?)
+        } else {
+            None
+        };
+    let items = items
+        .into_iter()
+        .skip(start)
+        .take(pagination.page_size)
+        .collect();
+    Ok(ListOfFaults {
+        items,
+        total: Some(total),
+        next_page,
+        schema,
+        extras,
+    })
 }
 
 /// `GET /sovd/v1/components/{component_id}/faults` — list faults.
@@ -86,9 +178,12 @@ impl FaultQuery {
         ("severity" = Option<i32>, Query, description = "Severity upper bound (exclusive)"),
         ("scope" = Option<String>, Query, description = "Scope string"),
         ("status_key" = Option<String>, Query, description = "Status filter in key:value form"),
+        ("page" = Option<String>, Query, description = "1-based page number (default 1)"),
+        ("page-size" = Option<String>, Query, description = "Page size (default 50)"),
     ),
     responses(
         (status = 200, description = "List of faults", body = ListOfFaults),
+        (status = 400, description = "Invalid pagination request", body = sovd_interfaces::spec::error::GenericError),
         (status = 404, description = "Component not found"),
     ),
 )]
@@ -97,12 +192,10 @@ pub async fn list_faults(
     Path(component_id): Path<String>,
     Query(query): Query<FaultQuery>,
 ) -> Result<Json<ListOfFaults>, ApiError> {
+    let (filter, pagination) = query.into_parts()?;
     let component = ComponentId::new(component_id);
-    Ok(Json(
-        server
-            .dispatch_list_faults(&component, query.into_filter())
-            .await?,
-    ))
+    let faults = server.dispatch_list_faults(&component, filter).await?;
+    Ok(Json(paginate_faults(faults, pagination)?))
 }
 
 /// `GET /sovd/v1/components/{component_id}/faults/{fault_code}` — fault

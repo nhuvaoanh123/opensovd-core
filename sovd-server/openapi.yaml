@@ -120,6 +120,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: page
+        in: query
+        description: 1-based page number (default 1)
+        required: false
+        schema:
+          type: string
+      - name: page-size
+        in: query
+        description: Page size (default 50)
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           description: List of faults
@@ -127,6 +139,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListOfFaults'
+        '400':
+          description: Invalid pagination request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
         '404':
           description: Component not found
     delete:
@@ -967,8 +985,22 @@ components:
           items:
             $ref: '#/components/schemas/Fault'
           description: All faults that match the request filter.
+        next_page:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Cursor for the next page, expressed as the next 1-based page number.
+          minimum: 0
         schema:
           description: Optional embedded JSON Schema describing the response shape.
+        total:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          description: Total number of faults that matched the filter before paging.
+          minimum: 0
     OperationDescription:
       type: object
       description: |-

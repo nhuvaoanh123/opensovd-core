@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D6 - HIL scenario 05: components metadata.
+#
+# `/sovd/v1/components` returns the spec type
+# `sovd_interfaces::spec::component::DiscoveredEntities`, whose item rows
+# carry discovery metadata (`id`, `name`, `href`, `tags`) rather than
+# dedicated HW/SW version fields. This scenario verifies the discovery
+# contract on the 3-ECU bench (ADR-0023): CVC, SC, BCM must all be
+# present with stable ids and resolvable component hrefs.
+
+name: hil_sovd_05_components_metadata
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench ready. Keep D6 gated
+    until Pi sovd-main advertises the 3-ECU bench through
+    `/sovd/v1/components`.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+  expect_exact_count: 3
+
+expected_components:
+  - id: cvc
+    name: cvc
+    href_suffix: /sovd/v1/components/cvc
+  - id: sc
+    name: sc
+    href_suffix: /sovd/v1/components/sc
+  - id: bcm
+    name: bcm
+    href_suffix: /sovd/v1/components/bcm

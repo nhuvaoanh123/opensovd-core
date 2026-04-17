@@ -34,7 +34,7 @@ topology:
   description: >-
     CDA runs natively on the Windows dev machine. It speaks DoIP over
     the bench LAN to a Taktflow POSIX vECU container hosted on the Pi
-    at 192.168.0.197:13400 (same port as the ecu-sim scenario — only
+    at 192.0.2.10:13400 (same port as the ecu-sim scenario — only
     one of the two containers may run at a time).
 
   test_client:
@@ -45,7 +45,7 @@ topology:
     port: 20002
     config: deploy/sil/opensovd-cda.toml
   vecu:
-    host: 192.168.0.197
+    host: 192.0.2.10
     port: 13400
     image: taktflow/posix-cvc:latest
     source: firmware/targets/posix

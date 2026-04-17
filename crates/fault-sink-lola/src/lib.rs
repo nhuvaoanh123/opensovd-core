@@ -62,11 +62,12 @@ impl FaultSink for LolaFaultSink {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use sovd_interfaces::{
         ComponentId,
         extras::fault::{FaultId, FaultRecord, FaultSeverity},
     };
+
+    use super::*;
 
     #[tokio::test]
     async fn stub_reports_not_yet_implemented() {

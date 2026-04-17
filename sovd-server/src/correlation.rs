@@ -113,8 +113,9 @@ fn parse_traceparent_trace_id(value: &str) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::http::HeaderValue;
+
+    use super::*;
 
     #[test]
     fn parse_traceparent_happy_path() {

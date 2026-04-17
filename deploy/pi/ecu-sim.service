@@ -20,8 +20,8 @@ ExecStartPre=-/usr/bin/docker rm -f ecu-sim
 # real network interface (not the 172.17.0.2 docker bridge address) and reach
 # the dev machine on the same /24.
 #
-# The Pi has two interfaces: eth0 (192.168.1.0/24 — wired, not shared with the
-# dev machine) and wlan0 (192.168.0.0/24 — shared with the dev machine). We
+# The Pi has two interfaces: eth0 (203.0.113.0/24 — wired, not shared with the
+# dev machine) and wlan0 (192.0.2.0/24 — shared with the dev machine). We
 # force ecu-sim to bind wlan0 so VAM broadcasts reach the dev machine.
 ExecStart=/usr/bin/docker run --rm --name ecu-sim --network host -e SIM_NETWORK_INTERFACE=wlan0 taktflow/cda-ecu-sim:latest
 ExecStop=/usr/bin/docker stop ecu-sim

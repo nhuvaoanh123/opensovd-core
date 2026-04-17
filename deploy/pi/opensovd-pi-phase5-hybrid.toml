@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# Phase 5 Line A hybrid bench template for sovd-main on the Raspberry Pi.
+# 3-ECU bench per ADR-0023:
+#   - keep BCM local on the Pi (POSIX virtual body controller)
+#   - forward CVC and SC to CDA under /vehicle/v15
+#
+# The CDA base_url values below are the public-safe TEST-NET-2 placeholder.
+# For a live deploy, run deploy/pi/phase5-full-stack.sh with:
+#   SOVD_CONFIG_FILE=deploy/pi/opensovd-pi-phase5-hybrid.toml
+#   PHASE5_CDA_BASE_URL=http://<dev-host-lan-ip>:20002
+# so the script can render the real bench URL without checking it into git.
+
+dfm_component_id = ""
+local_demo_components = ["bcm"]
+
+[server]
+address = "0.0.0.0"
+port = 21002
+
+[backend]
+sqlite_path = "/opt/taktflow/sovd-main/dfm.db"
+
+[[cda_forward]]
+component_id = "cvc"
+remote_component_id = "cvc00000"
+base_url = "http://198.51.100.10:20002"
+path_prefix = "vehicle/v15"
+
+[[cda_forward]]
+component_id = "sc"
+remote_component_id = "sc00000"
+base_url = "http://198.51.100.10:20002"
+path_prefix = "vehicle/v15"
+
+[logging.otel]
+enabled = false

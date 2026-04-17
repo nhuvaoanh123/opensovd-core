@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D9 - HIL scenario 08: degraded-mode cable pull.
+#
+# The physical cable pull is simulated by taking the Pi `can0` interface
+# down. The route must keep answering `GET /faults` with HTTP 200, serve
+# the last-known list with `stale: true`, and then clear the stale marker
+# once `can0` is brought back up.
+
+name: hil_sovd_08_error_handling
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench ready for deliberate
+    `can0` disconnect / reconnect cycles on the Pi. Keep D9 gated until
+    the operator is comfortable with a short degraded-mode exercise.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+precondition:
+  kind: readable-fault-baseline
+  owner: line-b-bench-or-operator
+  minimum_faults: 1
+  reason: >-
+    Before D9 runs, ensure CVC has at least one readable fault so the
+    harness can prove the degraded response preserves a real last-known
+    list instead of falling back to an empty baseline.
+
+pi:
+  ssh_host: bench-pi@192.0.2.10
+  interface: can0
+  nominal_bitrate: 500000
+  recovery_restart_ms: 100
+
+target:
+  component_id: cvc
+  path: /sovd/v1/components/cvc/faults
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::fault::ListOfFaults
+  degraded_deadline_ms: 3000
+  recovery_deadline_ms: 10000
+  require_stale_during_disconnect: true
+  require_fresh_after_recovery: true

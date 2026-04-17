@@ -29,3 +29,7 @@ path = "src/main.rs"
 sovd-server = { workspace = true }
 clap = { workspace = true }
 utoipa = { workspace = true, features = ["yaml"] }
+cda-database = { path = "../../classic-diagnostic-adapter/cda-database", features = ["database-builder"] }
+cda-interfaces = { path = "../../classic-diagnostic-adapter/cda-interfaces" }
+tempfile = { workspace = true }
+prost = { workspace = true }

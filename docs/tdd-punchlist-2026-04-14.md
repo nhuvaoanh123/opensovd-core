@@ -17,7 +17,7 @@ broken CI and broken `cargo build` be the phase-by-phase punch list. TDD for
 infrastructure -- failures tell us what to build next. Each expected failure
 below is a feature, not a bug.
 
-Reference: `H:\eclipse-opensovd\classic-diagnostic-adapter`
+Reference: `H:\taktflow-opensovd\classic-diagnostic-adapter`
 
 ## Section 1 -- What we now mirror wholesale
 

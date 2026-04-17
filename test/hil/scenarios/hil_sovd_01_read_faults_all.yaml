@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D2 - HIL scenario 01: read faults across all bench ECUs.
+#
+# 3-ECU bench per ADR-0023: CVC (physical STM32 central), SC (physical
+# TMS570 safety), BCM (POSIX virtual body). Gated on PHASE5_BENCH_READY=1
+# until Line B declares hardware ready.
+
+name: hil_sovd_01_read_faults_all
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench fleet ready.
+    Keep D2 gated until CVC, SC, and BCM (per ADR-0023) are all
+    provisioned and reachable through Pi sovd-main.
+
+fleet:
+  expected_components:
+    - cvc
+    - sc
+    - bcm
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+calls:
+  - name: cvc_faults
+    method: GET
+    component_id: cvc
+    path: /sovd/v1/components/cvc/faults
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults
+
+  - name: sc_faults
+    method: GET
+    component_id: sc
+    path: /sovd/v1/components/sc/faults
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults
+
+  - name: bcm_faults
+    method: GET
+    component_id: bcm
+    path: /sovd/v1/components/bcm/faults
+    expect_status: 200
+    expect_type: sovd_interfaces::spec::fault::ListOfFaults

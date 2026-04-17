@@ -7,7 +7,7 @@
 # Phase 5 Line A D1 — sovd-main systemd unit on the Raspberry Pi bench.
 #
 # Binds 0.0.0.0:21002 so the dev host can reach the SOVD HTTP API over
-# the bench LAN (192.168.0.0/24). The port is a fixed allocation from
+# the bench LAN (192.0.2.0/24). The port is a fixed allocation from
 # phase-5-line-a.md and does NOT collide with ecu-sim (:13400) or the
 # CAN-to-DoIP proxy (:13401).
 

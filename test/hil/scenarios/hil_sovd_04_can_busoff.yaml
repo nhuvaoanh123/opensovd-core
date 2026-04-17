@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D5 - HIL scenario 04: real CAN bus-off on the Pi bench.
+#
+# This scenario actively drives the Pi `can0` interface into BUS-OFF by:
+# 1. Reconfiguring `can0` away from the bench's nominal 500 kbit/s setting.
+# 2. Sending repeated UDS tester-present frames so the controller accrues
+#    TX/no-ACK errors on the real bus.
+#
+# The method is inferred from checked-in bench documentation, not invented
+# blindly:
+# - taktflow-embedded-production/docs/guides/usb-can-adapter-setup.md
+#   documents how to observe BUS-OFF on `can0` and how to recover with
+#   `restart-ms`.
+# - taktflow-embedded-production/docs/lessons-learned/embedded-hil-sc-e2e-run-state.md
+#   records the real bench failure chain "no ACK -> TX error counter climbs
+#   -> bus-off".
+
+name: hil_sovd_04_can_busoff
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the full bench fleet ready.
+    Keep D5 gated until Pi sovd-main is reachable and the physical
+    bench can tolerate a deliberate can0 bus-off/recovery cycle.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+pi:
+  ssh_host: bench-pi@192.0.2.10
+  interface: can0
+  nominal_bitrate: 500000
+  bus_off_bitrate: 250000
+  recovery_restart_ms: 100
+  tester_frame: 7E0#023E000000000000
+  burst_frames: 512
+  max_bursts: 4
+
+target:
+  component_id: cvc
+  path: /sovd/v1/components/cvc/faults
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::fault::ListOfFaults
+  bus_off_fault_deadline_ms: 1000
+  recovery_deadline_ms: 10000
+  require_stale_during_bus_off: true
+  require_fresh_after_recovery: true
+  expected_fault_markers:
+    - C10300
+    - Can Bus Off
+    - bus off

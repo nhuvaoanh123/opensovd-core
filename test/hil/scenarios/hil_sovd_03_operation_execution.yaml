@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D4 - HIL scenario 03: operation execution.
+#
+# 3-ECU bench per ADR-0023. Motor self-test is reassigned from the retired
+# RZC to CVC (which now carries the motor-control role on the reduced
+# bench). The integration test loads this file directly.
+
+name: hil_sovd_03_operation_execution
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench ready. Keep D4 gated
+    until the CVC operation surface is reachable through Pi sovd-main.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+target:
+  component_id: cvc
+  operation_id: motor_self_test
+
+start_call:
+  method: POST
+  path: /sovd/v1/components/cvc/operations/motor_self_test/executions
+  body:
+    timeout: 30
+    parameters:
+      mode: quick
+    proximity_response:
+  expect_status: 202
+  expect_type: sovd_interfaces::spec::operation::StartExecutionAsyncResponse
+  expected_initial_status: running
+
+status_call:
+  method: GET
+  path_template: /sovd/v1/components/cvc/operations/motor_self_test/executions/{execution_id}
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::operation::ExecutionStatusResponse
+  accepted_terminal_statuses:
+    - completed
+    - failed
+  poll_interval_ms: 250
+  max_attempts: 20
+  require_parameters_on_completed: true
+  require_error_on_failed: true

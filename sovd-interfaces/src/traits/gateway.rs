@@ -19,10 +19,11 @@
 //! See upstream
 //! [`design.md`](../../../../opensovd/docs/design/design.md) §"SOVD Gateway".
 
-use crate::spec::fault::{Fault, FaultFilter};
-use crate::types::{component::ComponentId, error::Result};
-
 use super::backend::SovdBackend;
+use crate::{
+    spec::fault::{Fault, FaultFilter},
+    types::{component::ComponentId, error::Result},
+};
 
 /// System-wide SOVD gateway.
 ///

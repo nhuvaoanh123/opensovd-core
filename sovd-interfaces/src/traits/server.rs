@@ -28,13 +28,15 @@
 //! wire-format [`spec::error::GenericError`](crate::spec::error::GenericError)
 //! at the HTTP layer.
 
-use crate::spec::{
-    component::EntityCapabilities,
-    data::ReadValue,
-    fault::{FaultDetails, FaultFilter, ListOfFaults},
-    operation::{ExecutionStatusResponse, StartExecutionAsyncResponse, StartExecutionRequest},
+use crate::{
+    spec::{
+        component::EntityCapabilities,
+        data::ReadValue,
+        fault::{FaultDetails, FaultFilter, ListOfFaults},
+        operation::{ExecutionStatusResponse, StartExecutionAsyncResponse, StartExecutionRequest},
+    },
+    types::error::Result,
 };
-use crate::types::error::Result;
 
 /// SOVD server for a single ECU/component.
 ///

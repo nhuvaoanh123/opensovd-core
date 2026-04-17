@@ -30,15 +30,21 @@
 
 use async_trait::async_trait;
 
-use crate::spec::{
-    component::EntityCapabilities,
-    data::Datas,
-    fault::{FaultDetails, FaultFilter, ListOfFaults},
-    operation::{
-        ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse, StartExecutionRequest,
+use crate::{
+    spec::{
+        component::EntityCapabilities,
+        data::Datas,
+        fault::{FaultDetails, FaultFilter, ListOfFaults},
+        operation::{
+            ExecutionStatusResponse, OperationsList, StartExecutionAsyncResponse,
+            StartExecutionRequest,
+        },
+    },
+    types::{
+        component::ComponentId,
+        error::{Result, SovdError},
     },
 };
-use crate::types::{component::ComponentId, error::Result, error::SovdError};
 
 /// Which kind of backend a given [`SovdBackend`] is. Used by the gateway
 /// for routing decisions, metrics, and admin endpoints.

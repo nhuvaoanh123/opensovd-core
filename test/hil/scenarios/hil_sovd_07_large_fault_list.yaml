@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Phase 5 Line A D8 - HIL scenario 07: large fault list pagination.
+#
+# The Pi bench must expose 51+ faults on `cvc` so the `/faults` route is
+# forced onto its pagination path. The harness walks every returned page
+# cursor and verifies that the accumulated rows exactly match the
+# reported `total`.
+
+name: hil_sovd_07_large_fault_list
+
+gate:
+  bench_env: TAKTFLOW_BENCH
+  bench_env_value: "1"
+  readiness_env: PHASE5_BENCH_READY
+  readiness_env_value: "1"
+  tcp_addr: 192.0.2.10:21002
+  base_url: http://192.0.2.10:21002
+  not_ready_reason: >-
+    Line B Phase 5 has not yet declared the bench ready for large fault
+    seeding on CVC. Keep D8 gated until the Pi exposes a 51+ fault
+    `/faults` list without exhausting memory or wedging the server.
+
+inventory_call:
+  name: list_components
+  method: GET
+  path: /sovd/v1/components
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::component::DiscoveredEntities
+
+precondition:
+  kind: fault-lib-injection
+  owner: line-b-bench-or-operator
+  minimum_total: 51
+  reason: >-
+    Before D8 runs, seed at least 51 readable faults into CVC so the
+    first page fills completely and the route must emit a live
+    `next_page` cursor.
+
+target:
+  component_id: cvc
+  path: /sovd/v1/components/cvc/faults
+  page_size: 50
+  expect_status: 200
+  expect_type: sovd_interfaces::spec::fault::ListOfFaults
+  require_total_field: true

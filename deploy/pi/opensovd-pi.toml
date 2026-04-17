@@ -9,5 +9,8 @@
 address = "0.0.0.0"
 port = 21002
 
+[backend]
+sqlite_path = "/opt/taktflow/sovd-main/dfm.db"
+
 [logging.otel]
 enabled = false

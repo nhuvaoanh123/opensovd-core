@@ -310,7 +310,6 @@ impl GatewayHost for RemoteHost {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::{
         Json, Router,
         extract::Path,
@@ -326,6 +325,8 @@ mod tests {
         },
     };
     use tokio::net::TcpListener;
+
+    use super::*;
 
     // --- pure unit tests -------------------------------------------------
 
@@ -377,6 +378,8 @@ mod tests {
                 symptom_translation_id: None,
                 tags: None,
             }],
+            total: None,
+            next_page: None,
             schema: None,
             extras: None,
         })

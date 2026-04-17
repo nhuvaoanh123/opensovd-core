@@ -15,7 +15,7 @@
 //! Phase 5 Line A D1 — Pi full-stack deployment topology live test.
 //!
 //! This test exercises a `sovd-main` binary running natively on the
-//! Pi bench host (`192.168.0.197:21002`) against the bench fleet it
+//! Pi bench host (`192.0.2.10:21002`) against the bench fleet it
 //! serves. It is the red-side companion of
 //! `deploy/pi/phase5-full-stack.sh` — until that script has been
 //! executed against the bench, this test fails (nothing is listening
@@ -40,9 +40,9 @@
 //!
 //! # Port plan (per phase-5-line-a.md)
 //!
-//! - `sovd-main` on the Pi: `192.168.0.197:21002`
-//! - ecu-sim on the Pi: `192.168.0.197:13400` (pre-existing)
-//! - proxy on the Pi: `192.168.0.197:13401` (Phase 2 Line B, gated on
+//! - `sovd-main` on the Pi: `192.0.2.10:21002`
+//! - ecu-sim on the Pi: `192.0.2.10:13400` (pre-existing)
+//! - proxy on the Pi: `192.0.2.10:13401` (Phase 2 Line B, gated on
 //!   bench readiness — NOT probed by this test)
 
 use std::{env, net::SocketAddr, time::Duration};
@@ -51,16 +51,17 @@ use reqwest::StatusCode;
 use sovd_interfaces::spec::{component::DiscoveredEntities, fault::ListOfFaults};
 use tokio::net::TcpStream;
 
-const PI_SOVD_MAIN_ADDR: &str = "192.168.0.197:21002";
-const PI_SOVD_MAIN_BASE_URL: &str = "http://192.168.0.197:21002";
+const PI_SOVD_MAIN_ADDR_ENV: &str = "TAKTFLOW_PI_SOVD_MAIN_ADDR";
+const DEFAULT_PI_SOVD_MAIN_ADDR: &str = "192.0.2.10:21002";
+const PI_SOVD_MAIN_BASE_URL_ENV: &str = "TAKTFLOW_PI_SOVD_MAIN_BASE_URL";
 const BENCH_ENV: &str = "TAKTFLOW_BENCH";
 
 /// Expected bench components served by `sovd-main` in-memory demo
 /// data (see `sovd-server::InMemoryServer::new_with_demo_data`). A
 /// Pi-side deploy that runs `sovd-main` without wiring a real DFM
 /// backend still exposes these three component ids, which is the
-/// minimum D1 green signal.
-const EXPECTED_COMPONENTS: &[&str] = &["cvc", "fzc", "rzc"];
+/// minimum D1 green signal. 3-ECU bench per ADR-0023.
+const EXPECTED_COMPONENTS: &[&str] = &["cvc", "sc", "bcm"];
 
 /// Result of the preflight probe.
 enum Preflight {
@@ -74,33 +75,39 @@ enum Preflight {
 }
 
 async fn preflight() -> Preflight {
+    let pi_sovd_main_addr =
+        env::var(PI_SOVD_MAIN_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_SOVD_MAIN_ADDR.to_owned());
     if env::var(BENCH_ENV).ok().as_deref() != Some("1") {
         eprintln!(
             "skipping phase5 D1 full-stack bench: {BENCH_ENV}=1 not set (set it to run on the bench LAN)"
         );
         return Preflight::Skip;
     }
-    let addr: SocketAddr = match PI_SOVD_MAIN_ADDR.parse() {
+    let addr: SocketAddr = match pi_sovd_main_addr.parse() {
         Ok(a) => a,
         Err(e) => {
             return Preflight::FailNotDeployed(format!(
-                "bad PI_SOVD_MAIN_ADDR {PI_SOVD_MAIN_ADDR}: {e}"
+                "bad PI_SOVD_MAIN_ADDR {pi_sovd_main_addr}: {e}"
             ));
         }
     };
     match tokio::time::timeout(Duration::from_secs(1), TcpStream::connect(addr)).await {
         Ok(Ok(_)) => Preflight::Run,
         Ok(Err(e)) => Preflight::FailNotDeployed(format!(
-            "Pi sovd-main {PI_SOVD_MAIN_ADDR} not reachable: {e} (run deploy/pi/phase5-full-stack.sh against the bench)"
+            "Pi sovd-main {pi_sovd_main_addr} not reachable: {e} (run deploy/pi/phase5-full-stack.sh against the bench)"
         )),
         Err(_) => Preflight::FailNotDeployed(format!(
-            "Pi sovd-main {PI_SOVD_MAIN_ADDR} TCP probe timed out (run deploy/pi/phase5-full-stack.sh against the bench)"
+            "Pi sovd-main {pi_sovd_main_addr} TCP probe timed out (run deploy/pi/phase5-full-stack.sh against the bench)"
         )),
     }
 }
 
 #[tokio::test]
 async fn phase5_pi_full_stack_bench() {
+    let pi_sovd_main_addr =
+        env::var(PI_SOVD_MAIN_ADDR_ENV).unwrap_or_else(|_| DEFAULT_PI_SOVD_MAIN_ADDR.to_owned());
+    let pi_sovd_main_base_url = env::var(PI_SOVD_MAIN_BASE_URL_ENV)
+        .unwrap_or_else(|_| format!("http://{pi_sovd_main_addr}"));
     match preflight().await {
         Preflight::Skip => return,
         Preflight::FailNotDeployed(reason) => {
@@ -114,7 +121,7 @@ async fn phase5_pi_full_stack_bench() {
         .expect("reqwest client");
 
     // --- 1. /sovd/v1/components returns the bench fleet --------------
-    let components_url = format!("{PI_SOVD_MAIN_BASE_URL}/sovd/v1/components");
+    let components_url = format!("{pi_sovd_main_base_url}/sovd/v1/components");
     let response = client
         .get(&components_url)
         .send()
@@ -139,7 +146,7 @@ async fn phase5_pi_full_stack_bench() {
 
     // --- 2. per-component /faults round-trip ------------------------
     for component in EXPECTED_COMPONENTS {
-        let faults_url = format!("{PI_SOVD_MAIN_BASE_URL}/sovd/v1/components/{component}/faults");
+        let faults_url = format!("{pi_sovd_main_base_url}/sovd/v1/components/{component}/faults");
         let response = client
             .get(&faults_url)
             .send()
@@ -157,6 +164,6 @@ async fn phase5_pi_full_stack_bench() {
     }
 
     eprintln!(
-        "phase5_pi_full_stack_bench: D1 topology green against {PI_SOVD_MAIN_ADDR} for {EXPECTED_COMPONENTS:?}"
+        "phase5_pi_full_stack_bench: D1 topology green against {pi_sovd_main_addr} for {EXPECTED_COMPONENTS:?}"
     );
 }

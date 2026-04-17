@@ -8,7 +8,7 @@ SPDX-FileCopyrightText: 2026 The Contributors to Eclipse OpenSOVD (see CONTRIBUT
 This document audits the ASAM SOVD v1.1.0-rc1 OpenAPI YAML template that was
 ingested by the SOVD acquisition agent on 2026-04-14, and maps the on-disk
 contents to the five MVP use cases defined in
-[`H:\eclipse-opensovd\docs\REQUIREMENTS.md`](../../docs/REQUIREMENTS.md).
+[`H:\taktflow-opensovd\docs\REQUIREMENTS.md`](../../docs/REQUIREMENTS.md).
 
 It is the input for Deliverable 2 of Line A (porting spec-derived DTOs to
 `sovd-interfaces`). No Rust code has been written against the spec until this
@@ -17,11 +17,11 @@ audit is in place.
 ## 1. Source location
 
 - Root directory:
-  `H:\eclipse-opensovd\external\asam-public\ISO_17978-3_openapi\openapi-specification-1.1.0-rc1\`
+  `H:\taktflow-opensovd\external\asam-public\ISO_17978-3_openapi\openapi-specification-1.1.0-rc1\`
 - Top-level entry point:
   `sovd-api.yaml`
 - Source archive sidecar:
-  `H:\eclipse-opensovd\external\asam-public\ISO_17978-3_openapi.source.txt`
+  `H:\taktflow-opensovd\external\asam-public\ISO_17978-3_openapi.source.txt`
 - Origin URL (per sidecar):
   `https://standards.iso.org/iso/17978/-3/ed-1/en/ISO%2017978-3%20ed.1%20-%20openapi-specification-1.1.0-rc1.zip`
 - Downloaded: 2026-04-14
@@ -259,8 +259,8 @@ files, of which only the ~26 listed in §6.1–6.6 are MVP-relevant.
 ## 7. MVP use-case mapping
 
 Use cases are taken from
-[`H:\eclipse-opensovd\MASTER-PLAN.md`](../../MASTER-PLAN.md) §2.2 and refined
-in [`H:\eclipse-opensovd\docs\REQUIREMENTS.md`](../../docs/REQUIREMENTS.md)
+[`H:\taktflow-opensovd\MASTER-PLAN.md`](../../MASTER-PLAN.md) §2.2 and refined
+in [`H:\taktflow-opensovd\docs\REQUIREMENTS.md`](../../docs/REQUIREMENTS.md)
 sections 3.1–3.3.
 
 | UC  | Title                          | Spec coverage                                                                                                            | Notes                                                                                                          |
@@ -309,7 +309,7 @@ The archive itself is distributed via the ISO Standards Maintenance Portal
 ### Operational consequences for `sovd-interfaces`
 
 1. The YAMLs are **not** vendored into `opensovd-core`. They live in the
-   sibling read-only tree `H:\eclipse-opensovd\external\asam-public\…` and
+   sibling read-only tree `H:\taktflow-opensovd\external\asam-public\…` and
    are not published in any release artifact.
 2. We port **schema shapes and field names** (which are facts about the wire
    protocol) into Apache-2.0 Rust types. We **do not** copy spec descriptions

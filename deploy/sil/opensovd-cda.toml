@@ -12,7 +12,7 @@
 #
 # CDA runs natively on this Windows dev machine. It binds its SOVD REST
 # server on loopback port 20002 and talks DoIP over the bench LAN to the
-# upstream ecu-sim hosted on the Raspberry Pi at 192.168.0.197.
+# upstream ecu-sim hosted on the Raspberry Pi at 192.0.2.10.
 #
 # No Docker on the dev machine, no SocketCAN — see
 # docs/adr/0004-can-to-doip-proxy-on-raspberry-pi.md and
@@ -23,12 +23,12 @@
 # (FLXC1000.mdd, FLXCNG1000.mdd), which match the simulator's internal UDS
 # service catalog for the FLXC1000 / FSNR2000 entities the ecu-sim exposes
 # over DoIP on the Pi.
-path = "H:\\eclipse-opensovd\\classic-diagnostic-adapter\\testcontainer\\odx"
+path = "../classic-diagnostic-adapter/testcontainer/odx"
 
 [doip]
 # Local tester endpoint. CDA listens for DoIP peers here; for the SIL path
-# it will *connect out* to the Pi ecu-sim at 192.168.0.197:13400.
-tester_address = "192.168.0.105"
+# it will *connect out* to the Pi ecu-sim at 192.0.2.10:13400.
+tester_address = "192.0.2.20"
 tester_subnet = "255.255.255.0"
 
 [logging.otel]
