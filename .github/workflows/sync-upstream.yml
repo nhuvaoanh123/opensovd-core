@@ -1,0 +1,63 @@
+name: Sync fork with upstream
+
+# Rule: each Taktflow fork of an eclipse-opensovd/* repository MUST sync from
+# upstream at least once per day. This workflow runs daily at 02:00 UTC
+# (roughly hourly drift tolerated by GitHub's scheduler) and can be triggered
+# manually. It uses GitHub's native merge-upstream API — no extra secrets,
+# no third-party actions — and only fast-forwards the tracked branch.
+#
+# Install: copy this file to `.github/workflows/sync-upstream.yml` in every
+# fork. See `docs/upstream/README.md` in the Taktflow monolith for the
+# authoritative list of repos to fork and the per-repo tracked branch.
+
+on:
+  schedule:
+    # 02:00 UTC daily. GitHub may delay up to ~1 hour during peak; that is
+    # within the "at least once per day" rule.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to sync (defaults to repo default branch)
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Merge upstream into fork default branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge upstream via GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_BRANCH: ${{ github.event.inputs.branch || github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          echo "Syncing ${GITHUB_REPOSITORY} branch ${TARGET_BRANCH} with upstream."
+          response=$(
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${GITHUB_REPOSITORY}/merge-upstream" \
+              -f "branch=${TARGET_BRANCH}"
+          )
+          echo "$response"
+          # Fail loudly if the API reports a non-success merge_type.
+          merge_type=$(echo "$response" | jq -r '.merge_type // "unknown"')
+          case "$merge_type" in
+            fast-forward|none|merge) echo "merge_type=$merge_type — OK" ;;
+            *) echo "Unexpected merge_type: $merge_type"; exit 1 ;;
+          esac
+
+      - name: Record sync in step summary
+        run: |
+          {
+            echo "### Upstream sync"
+            echo "- Repo: \`${GITHUB_REPOSITORY}\`"
+            echo "- Branch synced: \`${TARGET_BRANCH:-default}\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- Time: \`$(date -u +'%Y-%m-%dT%H:%M:%SZ')\`"
+          } >> "$GITHUB_STEP_SUMMARY"
